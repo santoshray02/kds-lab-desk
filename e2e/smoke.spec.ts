@@ -12,7 +12,6 @@ test('register → enter → approve → PDF', async () => {
 
     await page.getByTestId('nav-new').click()
     await page.getByTestId('phone').fill('9800011111')
-    await page.getByTestId('person-new').click().catch(() => undefined)
     await page.getByTestId('title').selectOption('Mrs')
     await page.getByTestId('name').fill('Testa Kumari')
     await expect(page.getByTestId('sex')).toHaveValue('F')

@@ -142,7 +142,7 @@ table.res td{padding:2px 3px;font-size:10.5pt;vertical-align:top}
 table.res tr{break-inside:avoid;page-break-inside:avoid}
 table.res tr.grp td{font-weight:700;font-size:10pt;padding-top:5px;text-transform:uppercase}
 table.res tr.ab td.v{font-weight:800}
-table.res td.v{font-weight:600}
+table.res td.v{font-weight:400}
 .widal-head{margin:4px 2px;font-size:10.5pt}
 table.grid{width:100%;border-collapse:collapse;margin:4px 0;font-size:10.5pt}
 table.grid th,table.grid td{border:1px solid #444;padding:2px 4px;text-align:center}
