@@ -1,4 +1,7 @@
-# KDS WhatsApp gateway
+# KDS WhatsApp gateway (optional, for a computer helper)
+
+> Most labs do **not** need this. KDS Lab Desk can link WhatsApp by itself: Settings → General → *Link WhatsApp* → scan the QR.
+> This separate program is only for sending from a different computer or a server.
 
 A small program that sends the lab's report PDFs on WhatsApp by itself. KDS Lab Desk talks to it with the same
 three calls as Evolution API, so in the app you choose **Settings → Patients and WhatsApp → Automatic**.

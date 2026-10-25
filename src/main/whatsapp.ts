@@ -1,10 +1,14 @@
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
+import { join } from 'node:path'
+import QRCode from 'qrcode'
+import { createWhatsApp, type WhatsAppLink } from '../../gateway/wa.mjs'
+import { makeLimiter } from '../../gateway/server.mjs'
 import { audit, type Db } from './db'
 import { AppError } from './results'
 import { reportLink } from './reportsvc'
-import { getSettings } from './settings'
+import { getSettings, setSettings } from './settings'
 
 export interface WaPlan {
   reportId: number
@@ -13,7 +17,7 @@ export interface WaPlan {
   text: string
   appUrl: string
   webUrl: string
-  target: 'web' | 'app' | 'evolution'
+  target: 'web' | 'app' | 'evolution' | 'builtin'
 }
 
 export function buildWaPlan(db: Db, reportId: number): WaPlan {
@@ -40,7 +44,7 @@ export function buildWaPlan(db: Db, reportId: number): WaPlan {
   }
   const phone = `91${row.phone}`
   const enc = encodeURIComponent(text)
-  return { reportId, level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://web.whatsapp.com/send?phone=${phone}&text=${enc}`, target: s.waTarget === 'app' ? 'app' : s.waTarget === 'evolution' && s.evolution.url && s.evolution.instance && s.evolution.apiKey ? 'evolution' : 'web' }
+  return { reportId, level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://web.whatsapp.com/send?phone=${phone}&text=${enc}`, target: s.waBuiltin ? 'builtin' : s.waTarget === 'app' ? 'app' : s.waTarget === 'evolution' && s.evolution.url && s.evolution.instance && s.evolution.apiKey ? 'evolution' : 'web' }
 }
 
 /** Put a file on the Windows clipboard as a file (CF_HDROP) so Ctrl+V in WhatsApp attaches it. */
@@ -130,7 +134,8 @@ export function autoSendStatus(db: Db, reportId: number): AutoSendStatus {
  */
 export function autoSendIfEnabled(db: Db, reportId: number, pdfPath: string | null): Promise<'off' | 'sent' | 'failed'> {
   const s = getSettings(db)
-  if (!s.waAutoSend || s.waTarget !== 'evolution' || !s.evolution.url || !s.evolution.instance || !s.evolution.apiKey) return Promise.resolve('off')
+  const external = s.waTarget === 'evolution' && !!s.evolution.url && !!s.evolution.instance && !!s.evolution.apiKey
+  if (!s.waAutoSend || !(s.waBuiltin || external)) return Promise.resolve('off')
   if (autoSendStatus(db, reportId).status === 'sent') return Promise.resolve('sent') // never send the same report twice by itself
   let plan: WaPlan
   try {
@@ -139,7 +144,7 @@ export function autoSendIfEnabled(db: Db, reportId: number, pdfPath: string | nu
     return Promise.resolve('off') // no phone number: nothing to send
     void e
   }
-  return sendViaEvolution(db, reportId, pdfPath)
+  return sendAutomatically(db, reportId, pdfPath)
     .then(() => {
       audit(db, 'whatsapp.auto', 'reports', reportId, `${plan.level} to ${plan.phone}`)
       return 'sent' as const
@@ -148,4 +153,84 @@ export function autoSendIfEnabled(db: Db, reportId: number, pdfPath: string | nu
       audit(db, 'whatsapp.auto_failed', 'reports', reportId, e.message.slice(0, 300))
       return 'failed' as const
     })
+}
+
+// ---- WhatsApp linked inside this program (no server, no addresses: the owner scans a QR once) ----
+
+let link: WhatsAppLink | null = null
+let authDirPath = ''
+const limiter = makeLimiter({ minGapMs: 3000, jitterMs: 2000, perHour: 60 })
+
+/** Tests put a fake WhatsApp here. */
+export function setBuiltinAdapter(a: WhatsAppLink | null): void {
+  link = a
+}
+
+export function initBuiltin(dataDir: string): void {
+  authDirPath = join(dataDir, 'whatsapp-auth') // a login: deliberately not part of backups
+}
+
+function builtin(): WhatsAppLink {
+  if (!link) link = createWhatsApp({ authDir: authDirPath || './whatsapp-auth' })
+  return link
+}
+
+export interface BuiltinStatus {
+  state: 'off' | 'starting' | 'waiting_qr' | 'linked' | 'reconnecting'
+  qrSvg: string
+  phone: string
+}
+
+export async function builtinStatus(db: Db): Promise<BuiltinStatus> {
+  if (!getSettings(db).waBuiltin || !link) return { state: 'off', qrSvg: '', phone: '' }
+  const st = link.state()
+  const qr = link.qr()
+  if (st === 'open') return { state: 'linked', qrSvg: '', phone: link.phone() }
+  if (qr) return { state: 'waiting_qr', qrSvg: await QRCode.toString(qr, { type: 'svg', margin: 1, width: 280 }), phone: '' }
+  return { state: st === 'close' ? 'reconnecting' : 'starting', qrSvg: '', phone: '' }
+}
+
+/** Switch it on and start connecting; the QR to scan then shows in Settings. */
+export async function builtinLink(db: Db): Promise<void> {
+  setSettings(db, { waBuiltin: true })
+  await builtin().start()
+}
+
+/** Start again after the program restarts (only if it was linked before). */
+export function builtinResume(db: Db): void {
+  if (getSettings(db).waBuiltin) builtin().start().catch(() => undefined)
+}
+
+export async function builtinUnlink(db: Db): Promise<void> {
+  if (link) await link.logout().catch(() => undefined)
+  await link?.stop().catch(() => undefined)
+  link = null
+  setSettings(db, { waBuiltin: false, waAutoSend: false })
+}
+
+export async function builtinStop(): Promise<void> {
+  await link?.stop().catch(() => undefined)
+}
+
+const noWa = () => new AppError('WA_OFFLINE', 'WhatsApp is not connected right now. Check the internet, or link WhatsApp again in Settings.')
+
+export async function sendViaBuiltin(db: Db, reportId: number, pdfPath: string | null): Promise<void> {
+  const plan = buildWaPlan(db, reportId)
+  if (!link || link.state() !== 'open') throw noWa()
+  const sendDoc = plan.level === 'A' && pdfPath
+  try {
+    await limiter(() =>
+      sendDoc
+        ? link!.sendDocument(plan.phone, { buffer: readFileSync(pdfPath), mimetype: 'application/pdf', fileName: basename(pdfPath), caption: plan.text })
+        : link!.sendText(plan.phone, plan.text)
+    )
+  } catch (e) {
+    if ((e as { code?: string }).code === 'NO_WHATSAPP') throw new AppError('NO_WHATSAPP', 'This phone number is not on WhatsApp. Print the report instead.')
+    throw e instanceof AppError ? e : new AppError('WA_FAILED', 'WhatsApp could not send this message. Try again in a minute.')
+  }
+}
+
+/** Send with whichever automatic method is set up (linked WhatsApp, or the advanced external gateway). */
+export function sendAutomatically(db: Db, reportId: number, pdfPath: string | null): Promise<void> {
+  return buildWaPlan(db, reportId).target === 'builtin' ? sendViaBuiltin(db, reportId, pdfPath) : sendViaEvolution(db, reportId, pdfPath)
 }

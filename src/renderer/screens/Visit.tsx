@@ -289,7 +289,7 @@ function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
     const r = await guard(api.whatsapp.send(reportId))
     setBusy('')
     if (!r) return
-    if (r.opened === 'evolution') { toast(t('Sent on WhatsApp automatically.'), 'ok'); return }
+    if (r.opened === 'evolution' || r.opened === 'builtin') { toast(t('Sent on WhatsApp automatically.'), 'ok'); return }
     if (r.error) toast(`${t('Automatic sending failed, opened WhatsApp instead')}: ${r.error}`, '')
     if (r.level === 'A' && r.opened === 'web') {
       // WhatsApp Web cannot take a file from a link, so the last step is by hand: tell the user clearly

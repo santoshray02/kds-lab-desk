@@ -27,6 +27,8 @@ export interface Settings {
   waTarget: 'web' | 'app' | 'evolution'
   /** send the PDF on WhatsApp by itself when a report is approved (needs the automatic gateway) */
   waAutoSend: boolean
+  /** WhatsApp is linked inside this program (Settings → Link WhatsApp) */
+  waBuiltin: boolean
   /** small graphs of the patient's earlier results on the printed report */
   reportTrends: boolean
   /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
@@ -80,6 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waMessageHi: 'नमस्ते {name} जी, आपकी K.D.S. Pathology की रिपोर्ट ({sample}) तैयार है।',
   waTarget: 'web',
   waAutoSend: false,
+  waBuiltin: false,
   reportTrends: true,
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',

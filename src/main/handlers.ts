@@ -20,6 +20,7 @@ import {
   addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, updateBill,
   type NewVisitInput, type VisitFilter
 } from './visits'
+import { builtinLink, builtinResume, builtinStatus, builtinUnlink, initBuiltin, sendAutomatically } from './whatsapp'
 import { autoSendIfEnabled, autoSendStatus, buildWaPlan, copyFileToClipboard, sendViaEvolution, testEvolution } from './whatsapp'
 import { seedDemo, clearDemo } from './demo'
 import { runImport, importLog, type ImportProgress } from './importer/run'
@@ -59,6 +60,8 @@ export function makeHandlers(ctx: Ctx) {
   const pdfWriter = (p: string, b: Buffer) => writeFileSync(p, b)
   const pdfOf = (reportId: number) => ensurePdf(db, ctx.dataDir, reportId, htmlToPdf, pdfWriter)
   setPdfProvider(pdfOf)
+  initBuiltin(ctx.dataDir)
+  setTimeout(() => builtinResume(db), 8000) // reconnect a linked WhatsApp a few seconds after start
   /** Level A: copy the PDF to the clipboard; then open the chat in the browser or in the desktop app. */
   const openChat = async (plan: ReturnType<typeof buildWaPlan>, pdf: string, target: 'web' | 'app' | 'evolution') => {
     let copied = false
@@ -229,14 +232,14 @@ export function makeHandlers(ctx: Ctx) {
       send: async (reportId: number) => {
         const plan = buildWaPlan(db, reportId)
         const pdf = await pdfOf(reportId)
-        if (plan.target === 'evolution') {
+        if (plan.target === 'evolution' || plan.target === 'builtin') {
           try {
-            await sendViaEvolution(db, reportId, pdf)
-            audit(db, 'whatsapp.send', 'reports', reportId, `${plan.level}/evolution`)
-            return { level: plan.level, copied: false, opened: 'evolution' as const, pdf, error: '' }
+            await sendAutomatically(db, reportId, pdf)
+            audit(db, 'whatsapp.send', 'reports', reportId, `${plan.level}/${plan.target}`)
+            return { level: plan.level, copied: false, opened: plan.target, pdf, error: '' }
           } catch (e) {
             // the gateway is down or not linked: carry on with WhatsApp Web so the report still gets out
-            audit(db, 'whatsapp.evolution_failed', 'reports', reportId, (e as Error).message)
+            audit(db, 'whatsapp.auto_failed_manual', 'reports', reportId, (e as Error).message)
             const r = await openChat(plan, pdf, 'web')
             return { ...r, error: (e as Error).message }
           }
@@ -252,6 +255,9 @@ export function makeHandlers(ctx: Ctx) {
       },
       testEvolution: (url: string, instance: string, apiKey: string) => testEvolution(url, instance, apiKey),
       autoStatus: (reportId: number) => autoSendStatus(db, reportId),
+      linkStatus: () => builtinStatus(db),
+      link: async (pin?: string) => { requirePin(db, pin); await builtinLink(db) },
+      unlink: async (pin?: string) => { requirePin(db, pin); await builtinUnlink(db) },
       openWeb: async (reportId: number) => {
         const plan = buildWaPlan(db, reportId)
         await shell.openExternal(plan.webUrl)

@@ -1,3 +1,4 @@
+import { WhatsAppLink } from './WhatsAppLink'
 import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/settings'
 import { SECTION_ORDER } from '../../shared/masterData'
@@ -133,24 +134,7 @@ function General({ pin }: { pin?: string }) {
       <div className="card col">
         <h2>{t('Patients and WhatsApp')}</h2>
         <label className="checkrow"><input type="checkbox" checked={s.phoneRequired} onChange={(e) => set('phoneRequired', e.target.checked)} data-testid="phone-required" /> {t('Phone number is required for every patient')}</label>
-        <label className="f" style={{ maxWidth: 420 }}>{t('Open WhatsApp in')}
-          <select className="input" value={s.waTarget} onChange={(e) => set('waTarget', e.target.value as 'web' | 'app' | 'evolution')} data-testid="wa-target">
-            <option value="web">{t('Browser (WhatsApp Web)')}</option>
-            <option value="app">{t('WhatsApp Desktop app')}</option>
-            <option value="evolution">{t('Automatic (WhatsApp gateway)')}</option>
-          </select>
-        </label>
-        {s.waTarget === 'evolution' && (
-          <label className="checkrow"><input type="checkbox" checked={s.waAutoSend} onChange={(e) => set('waAutoSend', e.target.checked)} data-testid="wa-auto" /> {t('Send the report on WhatsApp by itself as soon as it is approved')}</label>
-        )}
-        {s.waTarget === 'evolution' && (
-          <div className="grid4">
-            <label className="f">{t('Gateway address')}<input className="input" placeholder="http://localhost:8080" value={s.evolution.url} onChange={(e) => setS((x) => ({ ...x, evolution: { ...x.evolution, url: e.target.value } }))} /></label>
-            <label className="f">{t('Instance name')}<input className="input" value={s.evolution.instance} onChange={(e) => setS((x) => ({ ...x, evolution: { ...x.evolution, instance: e.target.value } }))} /></label>
-            <label className="f">{t('API key')}<input className="input" type="password" value={s.evolution.apiKey} onChange={(e) => setS((x) => ({ ...x, evolution: { ...x.evolution, apiKey: e.target.value } }))} /></label>
-            <div style={{ alignSelf: 'end' }}><button className="btn ghost" onClick={async () => { const r = await guard(api.whatsapp.testEvolution(s.evolution.url, s.evolution.instance, s.evolution.apiKey)); if (r) toast(t(r.message), r.ok ? 'ok' : '') }}>{t('Test the gateway')}</button></div>
-          </div>
-        )}
+        <WhatsAppLink s={s} set={set} setS={setS} pin={pin} />
         <label className="f">{t('WhatsApp message (English). {name} and {sample} are filled in.')}<textarea className="input" rows={2} value={s.waMessageEn} onChange={(e) => set('waMessageEn', e.target.value)} /></label>
         <label className="f">{t('WhatsApp message (Hindi)')}<textarea className="input" rows={2} value={s.waMessageHi} onChange={(e) => set('waMessageHi', e.target.value)} /></label>
         <label className="f" style={{ maxWidth: 260 }}>{t('Remind about pen-drive backup every (days)')}<input className="input num" type="number" min={1} max={60} value={s.penDriveReminderDays} onChange={(e) => set('penDriveReminderDays', Number(e.target.value))} /></label>
@@ -344,7 +328,7 @@ function Cloud({ pin }: { pin?: string }) {
   const st = status.data as { enabled: boolean; pending?: number; failed?: number; lastOk?: string; lastError?: string } | undefined
   return (
     <div className="col">
-      <div className="alert info"><b>ℹ</b><span>{t('Cloud sync is off until set up. Everything works without it. Follow docs/CLOUD-SETUP.md with a family helper to create the free cloud account, then paste the two values here.')}</span></div>
+      <div className="alert info"><b>ℹ</b><span>{t('Cloud sync is optional and is set up once by a computer helper. Everything in the program works without it.')}</span></div>
       <div className="card col">
         <h2>☁ {t('Cloud connection (Supabase)')}</h2>
         <label className="f">{t('Project URL')}<input className="input mono" value={c.url} onChange={(e) => setC({ ...c, url: e.target.value })} placeholder="https://xxxx.supabase.co" data-testid="cloud-url" /></label>
@@ -396,8 +380,11 @@ function DataTab({ pin }: { pin?: string }) {
       <div className="card col">
         <h2>{t('Automatic updates')}</h2>
         <div className="muted">{t('The program looks for a newer version when it starts and updates itself.')}</div>
-        <label className="f">{t('Update address')}<input className="input mono" value={u.url} onChange={(e) => setU({ ...u, url: e.target.value })} placeholder="https://…/releases/" /></label>
         <label className="checkrow"><input type="checkbox" checked={u.enabled} onChange={(e) => setU({ ...u, enabled: e.target.checked })} /> {t('Check for updates when the program starts')}</label>
+        <details>
+          <summary className="muted" style={{ cursor: 'pointer' }}>{t('Advanced (for the computer helper)')}</summary>
+          <label className="f" style={{ marginTop: 8 }}>{t('Update address')}<input className="input mono" value={u.url} onChange={(e) => setU({ ...u, url: e.target.value })} placeholder="https://…/releases/" /></label>
+        </details>
         <div><button className="btn" onClick={async () => { if (await guard(api.settings.set({ updates: u }, pin))) { await reloadSettings(); toast(t('Saved (applies after restart)'), 'ok') } }}>{t('Save')}</button></div>
       </div>
       <div className="row"><button className="btn ghost" onClick={() => go({ name: 'backup' })}>{t('Go to Backup')}</button></div>

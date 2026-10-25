@@ -11,7 +11,7 @@ import { clock } from '../src/main/patients'
 import { createVisit } from '../src/main/visits'
 import { approveReport, getEntry, saveDraft } from '../src/main/results'
 import { setSettings } from '../src/main/settings'
-import { autoSendIfEnabled, autoSendStatus, sendViaEvolution, setWaFetch, testEvolution } from '../src/main/whatsapp'
+import { autoSendIfEnabled, autoSendStatus, buildWaPlan, builtinLink, builtinStatus, builtinUnlink, sendViaBuiltin, sendViaEvolution, setBuiltinAdapter, setWaFetch, testEvolution } from '../src/main/whatsapp'
 
 const KEY = 'k'.repeat(24)
 let server: Server
@@ -146,3 +146,81 @@ describe('KDS Lab Desk talking to the gateway', () => {
     expect(await autoSendIfEnabled(db, rid3, pdf)).toBe('off')
   })
 })
+
+describe('WhatsApp linked inside the app (QR, no addresses)', () => {
+  let db: Db
+  let st: 'open' | 'connecting' | 'close'
+  let qr: string
+  let out: { kind: string; number: string; file?: string; caption?: string }[]
+  let loggedOut: boolean
+  const fakeLink = {
+    async start() { st = 'connecting'; qr = 'FAKE-QR-TEXT' },
+    state: () => st,
+    qr: () => qr,
+    phone: () => '919800099999',
+    async sendText(number: string, text: string) { out.push({ kind: 'text', number, caption: text }) },
+    async sendDocument(number: string, d: { fileName: string; caption: string }) {
+      if (number.endsWith('0000')) throw Object.assign(new Error('x'), { code: 'NO_WHATSAPP' })
+      out.push({ kind: 'doc', number, file: d.fileName, caption: d.caption })
+    },
+    async logout() { loggedOut = true; st = 'close' },
+    async stop() {}
+  }
+  const approved = (name: string, phone: string) => {
+    const v = createVisit(db, { patient: { name, title: 'Mr', sex: 'M', phone, village: 'T' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['RBS'], paid: 0 })
+    const rid = getEntry(db, v.visitId).reportId!
+    saveDraft(db, rid, { rbs: '100' })
+    approveReport(db, rid, {})
+    return rid
+  }
+  beforeEach(() => {
+    db = openDb(':memory:')
+    seedMaster(db)
+    clock.now = () => new Date(2026, 9, 25, 10, 0, 0)
+    st = 'close'; qr = ''; out = []; loggedOut = false
+    setBuiltinAdapter(fakeLink as never)
+  })
+  afterEach(() => setBuiltinAdapter(null))
+
+  it('shows a QR while waiting, then the linked number, then goes back to off after unlinking', async () => {
+    expect((await builtinStatus(db)).state).toBe('off')
+    await builtinLink(db)
+    const waiting = await builtinStatus(db)
+    expect(waiting.state).toBe('waiting_qr')
+    expect(waiting.qrSvg).toContain('<svg')
+    st = 'open'; qr = ''
+    expect(await builtinStatus(db)).toMatchObject({ state: 'linked', phone: '919800099999' })
+    st = 'close'
+    expect((await builtinStatus(db)).state).toBe('reconnecting')
+    st = 'open'
+    await builtinUnlink(db)
+    expect(loggedOut).toBe(true)
+    expect((await builtinStatus(db)).state).toBe('off')
+  })
+  it('sends the PDF through the linked WhatsApp, with plain-language failures', async () => {
+    const rid = approved('Built In', '9800000091')
+    const pdf = join(mkdtempSync(join(tmpdir(), 'kds-bi-')), 'r.pdf')
+    writeFileSync(pdf, '%PDF-1.4 x')
+    await builtinLink(db)
+    expect(buildWaPlan(db, rid).target).toBe('builtin')
+    await expect(sendViaBuiltin(db, rid, pdf)).rejects.toThrow(/not connected right now/)
+    st = 'open'; qr = ''
+    await sendViaBuiltin(db, rid, pdf)
+    expect(out[0]).toMatchObject({ kind: 'doc', number: '919800000091', file: 'r.pdf' })
+    expect(out[0].caption).toContain('Built In')
+    const r2 = approved('Not On Wa', '9800000000')
+    await expect(sendViaBuiltin(db, r2, pdf)).rejects.toThrow(/not on WhatsApp/)
+  })
+  it('auto-send works through the linked WhatsApp', async () => {
+    const rid = approved('Auto Built', '9800000092')
+    const pdf = join(mkdtempSync(join(tmpdir(), 'kds-bi-')), 'a.pdf')
+    writeFileSync(pdf, '%PDF-1.4 y')
+    await builtinLink(db)
+    st = 'open'; qr = ''
+    setSettings(db, { waAutoSend: true })
+    expect(await autoSendIfEnabled(db, rid, pdf)).toBe('sent')
+    expect(out).toHaveLength(1)
+    expect(autoSendStatus(db, rid).status).toBe('sent')
+  })
+})
+

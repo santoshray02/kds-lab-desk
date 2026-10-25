@@ -57,16 +57,25 @@ Your data is saved in `C:\Users\<name>\AppData\Roaming\KDS Lab Desk`. Uninstalli
 
 ## 3. WhatsApp
 
-You need **WhatsApp Desktop** on the PC, and the patient's phone number saved.
+**Best way (do this once):** link the lab's WhatsApp, like WhatsApp Web.
 
-1. Open the approved report and press **Send on WhatsApp** (green).
-2. The patient's chat opens in WhatsApp. The PDF has already been copied.
-3. In the message box press **Ctrl+V** (the PDF appears), then **Enter** to send.
+1. Go to **Settings → General**, find **Send reports on WhatsApp**, press **Link WhatsApp**.
+2. A square code (QR) appears. On the lab phone: open WhatsApp → the three dots (⋮) → **Linked devices** → **Link a device** → point the phone at the code.
+3. The screen says **WhatsApp is linked**. Done. This is needed only once (again only if you press *Unlink* or remove the device on the phone).
 
-If WhatsApp Desktop does not open, the program tries WhatsApp Web in the browser. Then attach the saved PDF yourself.
-No phone number? You can only print.
+After that, open an approved report and press **Send on WhatsApp** (green): the PDF goes to the patient by itself, with no copy and paste.
+You can also tick **Send the report on WhatsApp by itself as soon as it is approved**, and then even that button is not needed.
+If the internet is off, the program says so; press the green button again later.
+
+Tips: use a number you can afford to lose (WhatsApp does not like automatic messages). The program waits a few seconds between messages on purpose.
+No phone number saved for the patient? You can only print.
+
+**If you have not linked WhatsApp:** pressing the green button opens the patient's chat in the browser. The PDF is already copied:
+click the message box, press **Ctrl+V**, then **Enter**.
 
 When the cloud is set up later (see `CLOUD-SETUP.md`) the message carries a **link and a PIN** instead, and nothing needs to be attached.
+
+**हिंदी में:** Settings → General → *Link WhatsApp* दबाएँ, फ़ोन में WhatsApp → ⋮ → Linked devices → Link a device से QR स्कैन करें। बस एक बार। उसके बाद हरा बटन PDF अपने-आप भेज देता है।
 
 ---
 
