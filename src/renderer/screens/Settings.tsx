@@ -367,7 +367,7 @@ function DataTab({ pin }: { pin?: string }) {
       </div>
       <div className="card col">
         <h2>{t('Automatic updates')}</h2>
-        <div className="muted">{t('Off until the helper sets the update address. The program then updates itself.')}</div>
+        <div className="muted">{t('The program looks for a newer version when it starts and updates itself.')}</div>
         <label className="f">{t('Update address')}<input className="input mono" value={u.url} onChange={(e) => setU({ ...u, url: e.target.value })} placeholder="https://…/releases/" /></label>
         <label className="checkrow"><input type="checkbox" checked={u.enabled} onChange={(e) => setU({ ...u, enabled: e.target.checked })} /> {t('Check for updates when the program starts')}</label>
         <div><button className="btn" onClick={async () => { if (await guard(api.settings.set({ updates: u }, pin))) { await reloadSettings(); toast(t('Saved (applies after restart)'), 'ok') } }}>{t('Save')}</button></div>

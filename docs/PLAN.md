@@ -40,4 +40,4 @@ What was actually delivered, and how it was checked, is in `docs/STATUS.md`. Eve
   sync with a mock server, backups, Hindi label coverage.
 * `npm run e2e` — Playwright driving the real Electron app: register → enter → approve → PDF, duplicate guard,
   corrections, family phone numbers, search, owner reports, PIN/settings, range versioning, import and backup.
-* `npm run build` and `npm run dist` — produces `release/KDS Lab Desk Setup.exe`.
+* `npm run build` and `npm run dist` — produces `release/KDS-Lab-Desk-Setup.exe`.

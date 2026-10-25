@@ -25,8 +25,13 @@ nsis:
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: KDS Lab Desk
-  artifactName: KDS Lab Desk Setup.exe
+  # no spaces: GitHub renames spaces in asset names, which would break latest.yml
+  artifactName: KDS-Lab-Desk-Setup.exe
   deleteAppDataOnUninstall: false
   runAfterFinish: true
-# electron-updater: the update address is set in Settings → Data & updates. Nothing is published from here.
-publish: null
+# Updates are published by hand to the public releases repo (see docs/RELEASING.md); this only makes latest.yml.
+publish:
+  provider: github
+  owner: santoshray02
+  repo: kds-lab-desk-releases
+  releaseType: release

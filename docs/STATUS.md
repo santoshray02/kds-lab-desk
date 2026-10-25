@@ -1,6 +1,6 @@
 # Status
 
-**KDS Lab Desk 1.0.0 is built, tested and packaged.** The installer is `release/KDS Lab Desk Setup.exe` (≈130 MB, unsigned, per-user, no admin needed).
+**KDS Lab Desk 1.1.0 is built, tested and packaged.** The installer is `release/KDS-Lab-Desk-Setup.exe` (≈130 MB, unsigned, per-user, no admin needed).
 `release/` is git-ignored; rebuild it with `npm run dist` (about 40 seconds).
 
 ## What is done

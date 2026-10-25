@@ -10,7 +10,7 @@ the calculated values, and marks high and low results. It keeps every report, pr
 
 ## 1. Installing
 
-1. Copy **KDS Lab Desk Setup.exe** to the lab PC (pen drive is fine).
+1. Copy **KDS-Lab-Desk-Setup.exe** to the lab PC (pen drive is fine).
 2. Double-click it. If Windows says *"Windows protected your PC"*, click **More info**, then **Run anyway**. (The installer has no paid publisher certificate. This is normal.)
 3. Wait a few seconds. The program opens by itself and puts **KDS Lab Desk** on the desktop and in the Start menu. No administrator password is needed.
 

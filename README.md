@@ -13,7 +13,7 @@ One Windows PC, one owner. Register a patient → type the numbers → approve �
 
 ## Install (for the lab)
 
-Run `release/KDS Lab Desk Setup.exe`. Per-user install, no administrator needed.
+Run `release/KDS-Lab-Desk-Setup.exe`. Per-user install, no administrator needed.
 
 ## Develop
 
@@ -25,7 +25,7 @@ npm run dev          # app with hot reload
 npm test             # unit + integration tests (Vitest)
 npm run e2e          # builds, then drives the real Electron app (Playwright)
 npm run build        # out/
-npm run dist         # release/KDS Lab Desk Setup.exe
+npm run dist         # release/KDS-Lab-Desk-Setup.exe
 ```
 
 Useful environment variables: `KDS_DATA_DIR` (use another data folder), `KDS_DEMO=1` (seed invented demo patients on first start).

@@ -76,7 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lastNightlyBackup: '',
   penDriveReminderDays: 7,
   cloud: { enabled: false, url: '', key: '', reportBase: '' },
-  updates: { enabled: false, url: '' },
+  updates: { enabled: true, url: 'https://github.com/santoshray02/kds-lab-desk-releases/releases/latest/download' },
   demoMode: false,
   consentLine: 'Patient consents to the storage of this report for treatment and record purposes.'
 }

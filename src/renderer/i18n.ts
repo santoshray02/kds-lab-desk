@@ -388,7 +388,7 @@ export const HI: Record<string, string> = {
   'Remove demo patients': 'डेमो मरीज़ हटाएँ',
   'demo visits removed': 'डेमो विज़िट हटीं',
   'Automatic updates': 'अपने-आप अपडेट',
-  'Off until the helper sets the update address. The program then updates itself.': 'जब तक जानकार अपडेट का पता न डाले तब तक बंद है। फिर प्रोग्राम अपने-आप अपडेट होगा।',
+  'The program looks for a newer version when it starts and updates itself.': 'प्रोग्राम शुरू होने पर लैब का रिलीज़ पेज देखता है और अपने-आप अपडेट हो जाता है।',
   'Update address': 'अपडेट का पता',
   'Check for updates when the program starts': 'प्रोग्राम खुलने पर अपडेट देखें',
   'Saved (applies after restart)': 'सेव हुआ (दोबारा चालू करने पर लागू)',
