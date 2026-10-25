@@ -1,0 +1,14 @@
+services:
+  kds-whatsapp:
+    build: .
+    restart: unless-stopped          # comes back after a crash or a reboot
+    environment:
+      API_KEY: ${API_KEY:?set API_KEY in a .env file next to this one}
+      INSTANCE: kds
+    ports:
+      - "127.0.0.1:8080:8080"        # put HTTPS (Caddy / nginx) in front before opening it to the internet
+    volumes:
+      - kds-wa-data:/data            # the linked WhatsApp session lives here
+    mem_limit: 300m
+volumes:
+  kds-wa-data:

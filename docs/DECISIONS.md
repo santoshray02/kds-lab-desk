@@ -127,3 +127,9 @@ with the reason, so the doctor or a helper can change it later.
 * Reports → Overview: charts are plain SVG/HTML (no chart library, so no extra RAM). One hue for money, teal for cash, hover tooltips, comparison with the previous period.
 * WhatsApp: a web link cannot attach a file. Options: WhatsApp Web (default), Desktop app, or **Evolution API** (self-hosted gateway, sends the PDF by itself; if it fails the app falls back to WhatsApp Web). Evolution's unofficial mode can get a number banned by WhatsApp; use a spare lab number or its official Cloud API mode.
 * Memory/CPU: hardware acceleration off, renderer heap capped at 192 MB, PDF windows destroyed after use. Measured: ≈85–135 MB private memory, back to ≈90 MB after 15 PDFs in 2.5 s; idle CPU ≈ 0.
+
+## Own WhatsApp gateway (`gateway/`)
+* Built instead of running Evolution API (which needs PostgreSQL/Redis and ~1 GB): a ~300-line Node program on Baileys, session kept in a folder, ≈100 MB RAM. It exposes the same three calls (`sendText`, `sendMedia`, `connectionState`), so the app's "Automatic" option works with it or with Evolution.
+* Reliability: reconnect with back-off, one socket at a time, watchdog, auto re-link page after being unlinked from the phone, stray errors logged (5 in 5 min → clean restart), self-health-check, 90 s send timeout, and `run-forever.mjs` (Docker: `restart: unless-stopped`; Windows: `install-autostart.cmd`) restarts it if the process dies.
+* Safety: API key on every call but `/health`, PDFs only, 25 MB cap, one message per 3–5 s and 60 per hour, binds to 127.0.0.1 unless told otherwise.
+* Verified: HTTP/limit/auth logic by tests (the app's real sender against the real server with a fake WhatsApp); the real Baileys link was started and produced a genuine QR; kill → restart verified. **Not verified: an actual send to a real WhatsApp number** (needs a phone to link).

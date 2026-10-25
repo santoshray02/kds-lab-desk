@@ -191,7 +191,7 @@ export const HI: Record<string, string> = {
   'Press Enter to send.': 'भेजने के लिए Enter दबाएँ।',
   'Copy the PDF again': 'PDF फिर से कॉपी करें',
   'PDF copied. Press Ctrl+V in WhatsApp.': 'PDF कॉपी हो गया। WhatsApp में Ctrl+V दबाएँ।',
-  'Automatic (Evolution API gateway)': 'अपने-आप (Evolution API गेटवे)',
+  'Automatic (WhatsApp gateway)': 'अपने-आप (WhatsApp गेटवे)',
   'Gateway address': 'गेटवे का पता',
   'Instance name': 'इंस्टेंस का नाम',
   'API key': 'API की',

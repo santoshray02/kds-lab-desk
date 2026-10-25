@@ -136,7 +136,7 @@ function General({ pin }: { pin?: string }) {
           <select className="input" value={s.waTarget} onChange={(e) => set('waTarget', e.target.value as 'web' | 'app' | 'evolution')} data-testid="wa-target">
             <option value="web">{t('Browser (WhatsApp Web)')}</option>
             <option value="app">{t('WhatsApp Desktop app')}</option>
-            <option value="evolution">{t('Automatic (Evolution API gateway)')}</option>
+            <option value="evolution">{t('Automatic (WhatsApp gateway)')}</option>
           </select>
         </label>
         {s.waTarget === 'evolution' && (

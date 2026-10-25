@@ -82,6 +82,7 @@ export async function sendViaEvolution(db: Db, reportId: number, pdfPath: string
   const res = await fetchImpl(`${evoBase(url)}/message/${sendMedia ? 'sendMedia' : 'sendText'}/${encodeURIComponent(instance)}`, {
     method: 'POST',
     headers,
+    signal: AbortSignal.timeout(120_000),
     body: JSON.stringify(
       sendMedia
         ? { number: plan.phone, mediatype: 'document', mimetype: 'application/pdf', caption: plan.text, media: readFileSync(pdfPath).toString('base64'), fileName: basename(pdfPath) }
@@ -96,7 +97,7 @@ export async function sendViaEvolution(db: Db, reportId: number, pdfPath: string
 
 export async function testEvolution(url: string, instance: string, apiKey: string): Promise<{ ok: boolean; message: string }> {
   try {
-    const res = await fetchImpl(`${evoBase(url)}/instance/connectionState/${encodeURIComponent(instance)}`, { headers: { apikey: apiKey } })
+    const res = await fetchImpl(`${evoBase(url)}/instance/connectionState/${encodeURIComponent(instance)}`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(10_000) })
     if (!res.ok) return { ok: false, message: `The gateway answered ${res.status}. Check the address, instance name and key.` }
     const j: any = await res.json().catch(() => ({}))
     const state = j?.instance?.state ?? j?.state ?? 'unknown'

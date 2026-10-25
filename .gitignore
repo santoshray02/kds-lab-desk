@@ -12,3 +12,6 @@ playwright-report/
 .vite/
 tests/_scratch/
 vitest.scratch.config.mts
+gateway/.env
+gateway/auth/
+gateway/gateway.log*
