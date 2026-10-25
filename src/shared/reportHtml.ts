@@ -58,10 +58,24 @@ function spaced(title: string): string {
   return esc(title)
 }
 
+/** A thin bar showing where a numeric value sits against a "low – high" range. */
+function gauge(r: ReportRow): string {
+  const m = /^\s*(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)\s*$/.exec(r.range)
+  const v = parseFloat(r.value)
+  if (!m || !isFinite(v) || r.type !== 'numeric') return ''
+  const lo = parseFloat(m[1]), hi = parseFloat(m[2])
+  if (!(hi > lo)) return ''
+  const span = hi - lo
+  const min = lo - span * 0.6, max = hi + span * 0.6
+  const pos = (x: number) => Math.max(2, Math.min(98, ((x - min) / (max - min)) * 100))
+  const cls = r.flag === 'H' || r.flag === 'L' ? ' bad' : ''
+  return `<div class="gz"><i class="ok" style="left:${pos(lo).toFixed(1)}%;width:${(pos(hi) - pos(lo)).toFixed(1)}%"></i><b class="mk${cls}" style="left:${pos(v).toFixed(1)}%"></b></div>`
+}
+
 function rowHtml(r: ReportRow): string {
   const abnormal = r.flag != null
   const val = r.value === '' ? '' : esc(r.value) + (r.flag === 'H' || r.flag === 'L' ? ` ${r.flag}` : '')
-  return `<tr class="row${abnormal ? ' ab' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}</td></tr>`
+  return `<tr class="row${abnormal ? ' ab' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}${gauge(r)}</td></tr>`
 }
 
 function widalHtml(p: ReportPanel): string {
@@ -159,6 +173,11 @@ table.res tr.ab td{background:var(--badbg)}
 table.res tr.ab td.n,table.res tr.ab td.v{font-weight:800}
 table.res tr.ab td.v{color:var(--bad)}
 table.res td.v{font-weight:500}
+.gz{position:relative;height:5px;margin-top:2px;border-radius:3px;background:#e4e7f2}
+.gz .ok{position:absolute;top:0;bottom:0;background:#9fd6ad;border-radius:3px}
+.gz .mk{position:absolute;top:-2px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;background:var(--ac)}
+.gz .mk.bad{background:var(--bad)}
+.stamp{text-align:center;font-size:8pt;color:var(--mut);margin-top:3px}
 .widal-head{margin:4px 2px;font-size:10.5pt}
 table.grid{width:100%;border-collapse:collapse;margin:4px 0;font-size:10pt}
 table.grid th,table.grid td{border:1px solid var(--line);padding:2px 4px;text-align:center}
@@ -185,6 +204,6 @@ table.grid td.ant,table.grid th.ant{text-align:left}
 <div class="sig"><i></i>${esc(d.lab.doctorName)}<small>${esc(d.lab.doctorQual)}</small></div>
 <div class="mid"><div class="qr">${d.qrSvg}</div><div>${esc(d.qrCaption)}</div>${d.verifyCode ? `<div class="code">${esc(d.verifyCode)}</div>` : ''}</div>
 <div class="sig"><i></i>${esc(d.lab.techName)}<small>${esc(d.lab.techQual)}</small></div>
-</div><div class="disc">${esc(d.lab.footer)}${d.version > 1 ? ` · Version ${d.version}` : ''}</div></td></tr></tfoot>
+</div>${d.approvedAtText && !d.watermark ? `<div class="stamp">Electronically approved ${esc(new Date(d.approvedAtText).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }))} · ${esc(d.lab.doctorName)}</div>` : ''}<div class="disc">${esc(d.lab.footer)}${d.version > 1 ? ` · Version ${d.version}` : ''}</div></td></tr></tfoot>
 <tbody><tr><td>${summary}${asked}${corr}${sections}${sent}</td></tr></tbody></table></body></html>`
 }
