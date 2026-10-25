@@ -8,7 +8,7 @@ import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBa
 import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
 import { htmlToPdf, listPrinters, printHtml } from './electronBits'
-import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, type ParamEdit } from './master'
+import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, setPanelSentOut, type ParamEdit } from './master'
 import { dayReport, doctorMonthly, duesReport, pendingReport } from './owner'
 import { updatePatient, getPatient, peopleByPhone, searchPeople, suggestDoctors, type PatientInput } from './patients'
 import { ensurePdf, reportHtml, reportLink } from './reportsvc'
@@ -102,6 +102,10 @@ export function makeHandlers(ctx: Ctx) {
       setActive: (panelId: number, active: boolean, pin?: string) => {
         requirePin(db, pin)
         setPanelActive(db, panelId, active)
+      },
+      setSentOut: (panelId: number, sentOut: boolean, pin?: string) => {
+        requirePin(db, pin)
+        setPanelSentOut(db, panelId, sentOut)
       },
       setReviewed: (reviewed: boolean, pin?: string) => {
         requirePin(db, pin)

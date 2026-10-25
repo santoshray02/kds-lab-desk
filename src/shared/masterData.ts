@@ -269,9 +269,22 @@ export const MASTER: SeedPanel[] = [
       txt('s_rbc', 'RBC', ['Nil'], ['Nil'], '/HPF')
     ]
   },
-  { code: 'THYROID', name: 'Thyroid Profile (T3/T4/TSH) — sent out', section: 'SENT OUT', price: 450, sentOut: true, params: [] },
-  { code: 'VITD', name: 'Vitamin D — sent out', section: 'SENT OUT', price: 1200, sentOut: true, params: [] },
-  { code: 'B12', name: 'Vitamin B12 — sent out', section: 'SENT OUT', price: 900, sentOut: true, params: [] },
+  {
+    code: 'THYROID', name: 'Thyroid Profile (T3 / T4 / TSH)', section: 'BIOCHEMISTRY', price: 450, specimen: 'Blood',
+    params: [
+      { code: 't3', name: 'Total T3 (Triiodothyronine)', unit: 'ng/dL', dec: 0, pMin: 10, pMax: 1000, ranges: A(80, 200) },
+      { code: 't4', name: 'Total T4 (Thyroxine)', unit: 'µg/dL', dec: 1, pMin: 0.5, pMax: 40, ranges: A(5.1, 14.1) },
+      { code: 'tsh', name: 'TSH (Thyroid Stimulating Hormone)', unit: 'µIU/mL', dec: 2, pMin: 0.001, pMax: 500, ranges: A(0.4, 4.2) }
+    ]
+  },
+  {
+    code: 'VITD', name: 'Vitamin D (25-OH)', section: 'BIOCHEMISTRY', price: 1200, specimen: 'Blood',
+    params: [{ code: 'vitd', name: 'Vitamin D, 25-Hydroxy', unit: 'ng/mL', dec: 1, pMin: 1, pMax: 400, ranges: A(30, 100) }]
+  },
+  {
+    code: 'B12', name: 'Vitamin B12', section: 'BIOCHEMISTRY', price: 900, specimen: 'Blood',
+    params: [{ code: 'b12', name: 'Vitamin B12 (Cyanocobalamin)', unit: 'pg/mL', dec: 0, pMin: 10, pMax: 5000, ranges: A(200, 900) }]
+  },
   { code: 'OTHER_SO', name: 'Other test — sent out', section: 'SENT OUT', price: 0, sentOut: true, params: [] }
 ]
 

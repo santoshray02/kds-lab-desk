@@ -33,7 +33,9 @@ describe('database and master', () => {
   it('migrates once and seeds the master with ranges', () => {
     const m = loadMaster(db)
     expect(m.find((p) => p.code === 'CBC')!.params).toHaveLength(14)
-    expect(m.find((p) => p.code === 'THYROID')!.sentOut).toBe(true)
+    expect(m.find((p) => p.code === 'OTHER_SO')!.sentOut).toBe(true)
+    expect(m.find((p) => p.code === 'THYROID')!.sentOut).toBe(false)
+    expect(m.find((p) => p.code === 'THYROID')!.params.map((q) => q.code)).toEqual(['t3', 't4', 'tsh'])
     const hb = m.flatMap((p) => p.params).find((q) => q.code === 'hb')!
     expect(hb.ranges.length).toBeGreaterThanOrEqual(3)
     seedMaster(db) // second call must not duplicate
@@ -225,7 +227,7 @@ describe('result entry, approval and locking', () => {
   })
 
   it('sent-out only visits have no report to enter', () => {
-    const { visitId } = register('Sent Out', '9800000018', ['THYROID'])
+    const { visitId } = register('Sent Out', '9800000018', ['OTHER_SO'])
     expect(getEntry(db, visitId).status).toBe('none')
     expect(getEntry(db, visitId).sentOut).toHaveLength(1)
     expect(pendingReport(db).sentOut).toHaveLength(1)
@@ -234,7 +236,7 @@ describe('result entry, approval and locking', () => {
 
 describe('report data and HTML', () => {
   it('groups by section, marks abnormal values, has footer and signatures', () => {
-    const { visitId } = register('Print Person', '9800000019', ['CBC', 'WIDAL', 'THYROID'])
+    const { visitId } = register('Print Person', '9800000019', ['CBC', 'WIDAL', 'OTHER_SO'])
     const rid = getEntry(db, visitId).reportId!
     saveDraft(db, rid, { ...cbc, widal: 'Positive', wo: '80', wh: '40', wah: '20', wbh: '0' })
     approveReport(db, rid, {})
@@ -333,5 +335,33 @@ describe('report design extras', () => {
     d.sections[0].panels[0].rows[0].value = '12.0'
     expect(verifyCode(d)).not.toBe(a)
     expect(html).toContain(a)
+  })
+})
+
+describe('tests that can be done in the lab or sent out', () => {
+  it('an older database gets result fields for Thyroid, keeping its price; the toggle switches new visits', async () => {
+    const { setPanelSentOut } = await import('../src/main/master')
+    // simulate the old master: thyroid sent out, no fields
+    db.run("DELETE FROM ref_ranges WHERE param_id IN (SELECT id FROM test_params WHERE panel_id = (SELECT id FROM test_panels WHERE code = 'THYROID'))")
+    db.run("DELETE FROM test_params WHERE panel_id = (SELECT id FROM test_panels WHERE code = 'THYROID')")
+    db.run("UPDATE test_panels SET sent_out = 1, price = 475, name = 'Thyroid Profile (T3/T4/TSH) — sent out' WHERE code = 'THYROID'")
+    seedMaster(db)
+    const th = loadMaster(db).find((p) => p.code === 'THYROID')!
+    expect(th.sentOut).toBe(false)
+    expect(th.price).toBe(475)
+    expect(th.params).toHaveLength(3)
+    // done here: result entry exists and a high TSH is flagged
+    const v1 = register('Thy One', '9800000041', ['THYROID'])
+    const rid = getEntry(db, v1.visitId).reportId!
+    saveDraft(db, rid, { t3: '120', t4: '8', tsh: '9.5' })
+    approveReport(db, rid, {})
+    expect(buildReportData(db, rid).sections[0].panels[0].rows.find((r) => r.name.startsWith('TSH'))!.flag).toBe('H')
+    // switched to sent out: only new visits change
+    setPanelSentOut(db, th.id, true)
+    const v2 = register('Thy Two', '9800000042', ['THYROID'])
+    expect(getEntry(db, v2.visitId).status).toBe('none')
+    expect(getEntry(db, v2.visitId).sentOut).toHaveLength(1)
+    expect(getEntry(db, v1.visitId).status).toBe('approved')
+    expect(() => setPanelSentOut(db, loadMaster(db).find((p) => p.code === 'OTHER_SO')!.id, false)).toThrow()
   })
 })

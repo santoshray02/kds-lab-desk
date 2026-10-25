@@ -2,33 +2,62 @@ import { MASTER, bandDays } from '../shared/masterData'
 import type { PanelDef, ParamDef, RangeRow } from '../shared/types'
 import { audit, nowIso, type Db } from './db'
 
+function insertPanel(db: Db, sp: (typeof MASTER)[number], sort: number, now: string): number {
+  const pid = db.run(
+    'INSERT INTO test_panels(code, name, section, price, specimen, sort, sent_out, bundle_codes) VALUES(?,?,?,?,?,?,?,?)',
+    sp.code, sp.name, sp.section, sp.price, sp.specimen ?? 'Blood', sort, sp.sentOut ? 1 : 0, JSON.stringify(sp.bundle ?? [])
+  ).lastId
+  insertParams(db, pid, sp, now)
+  return pid
+}
+
+function insertParams(db: Db, pid: number, sp: (typeof MASTER)[number], now: string): void {
+  sp.params.forEach((q, j) => {
+    const qid = db.run(
+      `INSERT INTO test_params(panel_id, code, name, type, unit, decimals, options, normal, calc, grp, sort,
+        plausible_min, plausible_max, critical_low, critical_high) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      pid, q.code, q.name, q.type ?? 'numeric', q.unit ?? '', q.dec ?? 0, JSON.stringify(q.options ?? []),
+      JSON.stringify(q.normal ?? []), q.calc ?? null, q.group ?? null, j, q.pMin ?? null, q.pMax ?? null, q.cLow ?? null, q.cHigh ?? null
+    ).lastId
+    for (const [sex, band, low, high, text] of q.ranges ?? []) {
+      const [a, b] = bandDays(band)
+      db.run(
+        'INSERT INTO ref_ranges(param_id, version, sex, age_min_days, age_max_days, low, high, text, valid_from, reason) VALUES(?,?,?,?,?,?,?,?,?,?)',
+        qid, 1, sex, a, b, low, high, text ?? null, now, 'Default'
+      )
+    }
+  })
+}
+
 export function seedMaster(db: Db): void {
   const n = db.get<{ n: number }>('SELECT COUNT(*) AS n FROM test_panels')!.n
-  if (n > 0) return
   const now = nowIso()
+  if (n > 0) return upgradeMaster(db, now)
   db.tx(() => {
-    MASTER.forEach((sp, i) => {
-      const pid = db.run(
-        'INSERT INTO test_panels(code, name, section, price, specimen, sort, sent_out, bundle_codes) VALUES(?,?,?,?,?,?,?,?)',
-        sp.code, sp.name, sp.section, sp.price, sp.specimen ?? 'Blood', i, sp.sentOut ? 1 : 0, JSON.stringify(sp.bundle ?? [])
-      ).lastId
-      sp.params.forEach((q, j) => {
-        const qid = db.run(
-          `INSERT INTO test_params(panel_id, code, name, type, unit, decimals, options, normal, calc, grp, sort,
-            plausible_min, plausible_max, critical_low, critical_high) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-          pid, q.code, q.name, q.type ?? 'numeric', q.unit ?? '', q.dec ?? 0, JSON.stringify(q.options ?? []),
-          JSON.stringify(q.normal ?? []), q.calc ?? null, q.group ?? null, j, q.pMin ?? null, q.pMax ?? null, q.cLow ?? null, q.cHigh ?? null
-        ).lastId
-        for (const [sex, band, low, high, text] of q.ranges ?? []) {
-          const [a, b] = bandDays(band)
-          db.run(
-            'INSERT INTO ref_ranges(param_id, version, sex, age_min_days, age_max_days, low, high, text, valid_from, reason) VALUES(?,?,?,?,?,?,?,?,?,?)',
-            qid, 1, sex, a, b, low, high, text ?? null, now, 'Default'
-          )
-        }
-      })
-    })
+    MASTER.forEach((sp, i) => insertPanel(db, sp, i, now))
     audit(db, 'master.seed', 'master')
+  })
+}
+
+/**
+ * Older installs had Thyroid, Vitamin D and B12 as "sent out" with no results. They can be done in this lab,
+ * so give such a panel its fields (keeping its price and its place) and add any panel the install lacks.
+ */
+function upgradeMaster(db: Db, now: string): void {
+  db.tx(() => {
+    const rank = db.get<{ m: number }>('SELECT MAX(sort) AS m FROM test_panels')!.m
+    let next = rank + 1
+    for (const sp of MASTER) {
+      const row = db.get<{ id: number; sent_out: number }>('SELECT id, sent_out FROM test_panels WHERE code = ?', sp.code)
+      if (!row) {
+        insertPanel(db, sp, next++, now)
+        audit(db, 'master.add_panel', 'test_panels', undefined, sp.code)
+      } else if (row.sent_out && !sp.sentOut && !db.get('SELECT 1 AS x FROM test_params WHERE panel_id = ?', row.id)) {
+        db.run('UPDATE test_panels SET name = ?, section = ?, sent_out = 0 WHERE id = ?', sp.name, sp.section, row.id)
+        insertParams(db, row.id, sp, now)
+        audit(db, 'master.panel_in_house', 'test_panels', row.id, sp.code)
+      }
+    }
   })
 }
 
@@ -110,4 +139,12 @@ export function setPanelActive(db: Db, panelId: number, active: boolean): void {
 
 export function rangeHistory(db: Db, paramId: number) {
   return db.all('SELECT version, sex, age_min_days, age_max_days, low, high, text, valid_from, valid_to, reason FROM ref_ranges WHERE param_id = ? ORDER BY version DESC, id', paramId)
+}
+
+/** Switch a test between "done in this lab" and "sent to another lab". New visits only; old ones keep what they had. */
+export function setPanelSentOut(db: Db, panelId: number, sentOut: boolean): void {
+  const has = db.get('SELECT 1 AS x FROM test_params WHERE panel_id = ?', panelId)
+  if (!has) throw new Error('This test has no result fields, so it can only be sent out.')
+  db.run('UPDATE test_panels SET sent_out = ? WHERE id = ?', sentOut ? 1 : 0, panelId)
+  audit(db, 'master.sent_out', 'test_panels', panelId, String(sentOut))
 }

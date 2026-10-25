@@ -214,6 +214,14 @@ function MasterTab({ pin }: { pin?: string }) {
                     onBlur={async (e) => { const v = Number(e.target.value); if (v !== panel.price) { await guard(api.master.setPrice(panel.id, v, pin)); master.reload() } }} data-testid="price-input" />
                 </label>
                 <label className="checkrow"><input type="checkbox" checked={panel.active} onChange={async (e) => { await guard(api.master.setActive(panel.id, e.target.checked, pin)); master.reload() }} /> {t('In use')}</label>
+                {panel.params.length > 0 && (
+                  <label className="f" style={{ width: 230 }}>{t('This test is')}
+                    <select className="input" value={panel.sentOut ? 'out' : 'in'} onChange={async (e) => { await guard(api.master.setSentOut(panel.id, e.target.value === 'out', pin)); master.reload() }} data-testid="sent-out-toggle">
+                      <option value="in">{t('Done in this lab')}</option>
+                      <option value="out">{t('Sent to another lab')}</option>
+                    </select>
+                  </label>
+                )}
               </div>
               {panel.params.map((p) => (
                 <ParamEditor key={`${p.id}:${p.rangeVersion}:${p.unit}`} p={p} onSave={async (edit) => {
