@@ -120,6 +120,11 @@ function EntryView({ e, reload }: { e: Entry; reload: () => void }) {
       reload()
     } catch (err) {
       if (!(err instanceof ApiError)) return toast(String(err), 'bad')
+      if (err.code === 'LICENSE') {
+        const open = await confirm({ title: t('Free limit reached'), body: err.message, ok: t('Open Licence') })
+        if (open) go({ name: 'settings' })
+        return
+      }
       if (err.code === 'DUPLICATE') {
         const hits = err.data as { sampleId: string; patientName: string; date: string }[]
         const reason = await prompt({

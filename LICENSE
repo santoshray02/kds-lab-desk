@@ -1,17 +1,35 @@
 Copyright (c) 2026 K.D.S. Pathology, Dalsingsarai, Samastipur, Bihar, India. All rights reserved.
 
-KDS Lab Desk is proprietary software. No licence is granted to anyone except
-K.D.S. Pathology. Without the written permission of K.D.S. Pathology you may
-not copy, modify, distribute, sublicense, sell, rent or lease this software or
-any part of it, in source or binary form.
+KDS Lab Desk is proprietary software owned by K.D.S. Pathology ("the Owner").
+The source code is private. Nothing in this file gives anyone a right to the
+source code, and it may not be copied, modified or published without the
+written permission of the Owner.
 
-This software includes third-party components (for example Electron, Chromium,
+USING THE PROGRAM (the installer "KDS-Lab-Desk-Setup.exe")
+1. Free plan. The Owner allows any laboratory to install and use the unmodified
+   program, free of charge, to approve up to 100 reports in each calendar month.
+2. Licence. To approve more than that, the laboratory needs a licence code
+   issued by the Owner. The Owner may charge for a licence and may set its
+   limit and expiry date. K.D.S. Pathology holds an unlimited licence.
+3. The program must not be modified, reverse engineered, or have its limit or
+   licence check removed or bypassed, and it must not be sold, rented or
+   redistributed except by the Owner.
+4. Reports already approved can always be opened, printed and sent, whatever
+   the plan.
+
+THIRD-PARTY COMPONENTS
+The program includes third-party components (for example Electron, Chromium,
 pdf.js, qrcode, fflate, cfb, electron-updater, pino and Baileys). Each is
 provided under its own open-source licence, which continues to apply to that
-component. Their licence notices are included with the installed program
-(for example LICENSE.electron.txt and LICENSES.chromium.html) and in each
-package's own folder under node_modules.
+component. Their notices are included with the installed program (for example
+LICENSE.electron.txt and LICENSES.chromium.html) and in each package's own
+folder.
 
+NO WARRANTY
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED. Reports produced by it must be checked and approved by the
-responsible doctor before they are issued to a patient.
+responsible doctor before they are issued to a patient. The Owner is not liable
+for any loss arising from its use.
+
+This text is a plain working draft. Have a lawyer review it before the program
+is given to other laboratories or any money is charged.

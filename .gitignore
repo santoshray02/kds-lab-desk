@@ -16,3 +16,5 @@ gateway/.env
 gateway/auth/
 gateway/gateway.log*
 promo/
+*.pem
+KDS-licence-keys/

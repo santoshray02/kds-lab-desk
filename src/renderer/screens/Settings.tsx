@@ -1,3 +1,4 @@
+import { Licence } from './Licence'
 import { WhatsAppLink } from './WhatsAppLink'
 import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/settings'
@@ -6,7 +7,7 @@ import { rangeText } from '../../shared/ranges'
 import { CHILD_MAX_DAYS, MAX_AGE_DAYS, type PanelDef, type ParamDef, type RangeRow } from '../../shared/types'
 import { api, fmtDateTime, money, useApp, useAsync } from '../ui'
 
-type Tab = 'general' | 'master' | 'security' | 'cloud' | 'data'
+type Tab = 'general' | 'master' | 'security' | 'cloud' | 'data' | 'licence'
 
 export function SettingsScreen() {
   const { t } = useApp()
@@ -22,7 +23,7 @@ export function SettingsScreen() {
   if (!status.data) return <div className="page">{t('Loading…')}</div>
   if (!unlocked) return <Unlock onOk={(p) => { setPin(p); setUnlocked(true) }} />
 
-  const tabs: [Tab, string][] = [['general', 'General'], ['master', 'Test master & prices'], ['security', 'PIN & users'], ['cloud', 'Cloud sync'], ['data', 'Data & updates']]
+  const tabs: [Tab, string][] = [['general', 'General'], ['master', 'Test master & prices'], ['security', 'PIN & users'], ['cloud', 'Cloud sync'], ['data', 'Data & updates'], ['licence', 'Licence']]
   return (
     <div className="page" data-testid="settings">
       <h1>{t('Settings')}</h1>
@@ -37,6 +38,7 @@ export function SettingsScreen() {
       {tab === 'security' && <Security pin={pin} onPin={(p) => setPin(p)} refresh={status.reload} />}
       {tab === 'cloud' && <Cloud pin={pin} />}
       {tab === 'data' && <DataTab pin={pin} />}
+      {tab === 'licence' && <Licence pin={pin} />}
     </div>
   )
 }

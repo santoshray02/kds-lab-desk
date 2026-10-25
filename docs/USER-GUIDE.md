@@ -175,3 +175,13 @@ Press **Print this page** to print any of these.
 **पहली बार** — सेटिंग में 4 अंकों का पिन डालें और लिखकर रखें। डॉ. मनोज कुमार **सेटिंग → जाँच सूची और दाम** में सारी जाँचें और सामान्य सीमाएँ देखकर “जाँच हो गई” पर टिक करें।
 
 **भाषा** — ऊपर दाईं ओर **हिन्दी / English** बटन से स्क्रीन की भाषा बदलती है। छपी हुई रिपोर्ट हमेशा अंग्रेज़ी में होती है।
+
+---
+
+## Licence (free plan)
+
+The program is **free for up to 100 approved reports each month**. Settings → **Licence** shows how many are used.
+At the limit you can still open, print, search and send old reports; only approving a *new* report waits until the 1st of the next month or until you enter a licence code.
+To get a licence code, contact K.D.S. Pathology (rayskumar02@gmail.com). Paste the code in Settings → Licence → **Save licence**.
+
+**हिंदी में:** हर महीने 100 रिपोर्ट मुफ़्त हैं। सीमा पूरी होने पर पुरानी रिपोर्ट खुलती और छपती रहती हैं, सिर्फ़ नई रिपोर्ट मंज़ूर करना रुकता है। लाइसेंस कोड के लिए संपर्क करें और उसे Settings → Licence में चिपकाएँ।
