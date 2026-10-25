@@ -1,0 +1,32 @@
+appId: in.kdspathology.labdesk
+productName: KDS Lab Desk
+copyright: K.D.S. Pathology
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+asar: true
+asarUnpack:
+  - node_modules/pdfjs-dist/**
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+  # no code-signing certificate: the installer is unsigned (Windows SmartScreen shows "More info → Run anyway" once)
+  signExecutable: false
+nsis:
+  oneClick: true
+  perMachine: false
+  allowElevation: false
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: KDS Lab Desk
+  artifactName: KDS Lab Desk Setup.exe
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+# electron-updater: the update address is set in Settings → Data & updates. Nothing is published from here.
+publish: null

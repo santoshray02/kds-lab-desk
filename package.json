@@ -19,16 +19,16 @@
     "playwright": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "dependencies": {
     "cfb": "^1.2.2",
     "electron-updater": "^6.8.11",
     "fflate": "^0.8.3",
     "pdfjs-dist": "^6.4.299",
-    "qrcode": "^1.5.4",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "qrcode": "^1.5.4"
   },
   "scripts": {
     "dev": "electron-vite dev",
@@ -38,5 +38,6 @@
     "test": "vitest run",
     "e2e": "npm run build && playwright test",
     "dist": "npm run build && electron-builder --win nsis --publish never"
-  }
+  },
+  "homepage": "https://kdspathology.invalid"
 }
