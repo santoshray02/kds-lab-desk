@@ -10,3 +10,5 @@ test-results/
 playwright-report/
 *.log
 .vite/
+tests/_scratch/
+vitest.scratch.config.mts
