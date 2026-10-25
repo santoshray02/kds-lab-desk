@@ -6,3 +6,7 @@ out/
 *.db-*
 data/
 docs/reference/
+test-results/
+playwright-report/
+*.log
+.vite/
