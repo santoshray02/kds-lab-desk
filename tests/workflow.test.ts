@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { openDb, type Db } from '../src/main/db'
 import { loadMaster, seedMaster, editParam } from '../src/main/master'
 import { clock, peopleByPhone, searchPeople, suggestDoctors } from '../src/main/patients'
-import { addPayment, createVisit, listVisits } from '../src/main/visits'
+import { addPayment, cancelVisit, createVisit, listVisits } from '../src/main/visits'
 import { AppError, approveReport, buildReportData, getEntry, listVersions, previousValues, saveDraft, startCorrection } from '../src/main/results'
 import { checkPin, setPin, setSettings, getSettings } from '../src/main/settings'
 import { dayReport, doctorMonthly, duesReport, pendingReport } from '../src/main/owner'
@@ -431,5 +431,37 @@ describe('delta checks and trend lines', () => {
     expect(buildReportData(db, a.rid).sections[0].panels[0].rows.every((r) => !r.trend)).toBe(true)
     setSettings(db, { reportTrends: false })
     expect(renderReportHtml(buildReportData(db, rc))).not.toContain('class="spark"')
+  })
+})
+
+describe('cancel visit', () => {
+  it('removes a draft visit from the register and cash, needs a reason, and cannot be repeated', () => {
+    const v = register('Cancel Draft', '9800000101', ['RBS'], { paid: 50 })
+    expect(dayReport(db, '2026-10-25').cashReceived).toBe(50)
+    expect(() => cancelVisit(db, v.visitId, ' ')).toThrow(/reason/)
+    cancelVisit(db, v.visitId, 'Patient left')
+    const d = dayReport(db, '2026-10-25')
+    expect(d.visits).toHaveLength(0)
+    expect(d.cashReceived).toBe(0)
+    expect(pendingReport(db).unreported.some((p) => p.visitId === v.visitId)).toBe(false)
+    expect(() => cancelVisit(db, v.visitId, 'again')).toThrow(/already cancelled/)
+  })
+  it('withdraws an approved report: kept on file, no longer history or a duplicate source, charts and cloud told', async () => {
+    const { insights } = await import('../src/main/owner')
+    const v = register('Cancel Issued', '9800000102', ['CBC'], { paid: 200 })
+    const rid = getEntry(db, v.visitId).reportId!
+    saveDraft(db, rid, cbc)
+    approveReport(db, rid, {})
+    expect(insights(db, 7).totals.visits).toBe(1)
+    cancelVisit(db, v.visitId, 'Test entry, not a real patient')
+    const row = db.get<any>('SELECT status, is_current, reason FROM reports WHERE id = ?', rid)
+    expect(row).toMatchObject({ status: 'approved', is_current: 0 })
+    expect(row.reason).toBe('WITHDRAWN: Test entry, not a real patient')
+    expect(insights(db, 7).totals).toMatchObject({ visits: 0, billed: 0, cash: 0 })
+    // the same numbers typed for another patient are not a "duplicate" of a withdrawn report
+    const other = register('Other Person', '9800000103', ['CBC'])
+    const r2 = getEntry(db, other.visitId).reportId!
+    expect(saveDraft(db, r2, cbc).duplicates).toHaveLength(0)
+    expect(db.get<any>("SELECT detail FROM audit_log WHERE action = 'visit.cancel' ORDER BY id DESC LIMIT 1")!.detail).toContain('Test entry')
   })
 })

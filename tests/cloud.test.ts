@@ -236,6 +236,7 @@ describe('report page logic (Edge Function)', () => {
   it('public status tells a QR scanner only whether the report is genuine', async () => {
     expect(publicStatus(await rec(), false)).toEqual({ found: true, state: 'valid', version: 1, issuedOn: '2026-10-25' })
     expect(publicStatus(await rec(), true)).toMatchObject({ state: 'replaced by a corrected version' })
+    expect(publicStatus({ ...(await rec()), status: 'withdrawn' }, false)).toMatchObject({ state: 'withdrawn by the lab' })
     expect(publicStatus(null, false)).toEqual({ found: false })
   })
 })

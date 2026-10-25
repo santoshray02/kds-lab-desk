@@ -124,10 +124,10 @@ async function reportRows(db: Db, visitId: number) {
     }
     out.push({
       row: {
-        id: r.id, visit_id: r.visit_id, version: r.version, status: r.status, is_current: !!r.is_current, approved_at: r.approved_at,
+        id: r.id, visit_id: r.visit_id, version: r.version, status: String(r.reason ?? '').startsWith('WITHDRAWN:') ? 'withdrawn' : r.status, is_current: !!r.is_current, approved_at: r.approved_at,
         reason: r.reason, share_code: r.share_code, pin_salt: salt,
         pin_hash: r.share_code && r.share_pin ? await hashPin(r.share_code, r.share_pin, salt) : null,
-        pdf_path: r.status === 'approved' && r.share_code ? `${r.share_code}/v${r.version}.pdf` : null,
+        pdf_path: r.status === 'approved' && r.share_code && !String(r.reason ?? '').startsWith('WITHDRAWN:') ? `${r.share_code}/v${r.version}.pdf` : null,
         results, updated_at: nowIso()
       },
       local: r as { id: number; status: string; pdf_path: string | null }

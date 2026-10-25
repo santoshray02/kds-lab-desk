@@ -36,6 +36,7 @@ export async function decide(rec: ReportRecord | null, pin: string, recentFails:
 /** What anybody holding the link (or scanning the QR) may learn without the PIN. */
 export function publicStatus(rec: ReportRecord | null, newerExists: boolean) {
   if (!rec) return { found: false }
+  if (rec.status === 'withdrawn') return { found: true, state: 'withdrawn by the lab', version: rec.version, issuedOn: rec.approved_at ? rec.approved_at.slice(0, 10) : null }
   const state = rec.status !== 'approved' ? 'not issued' : rec.is_current && !newerExists ? 'valid' : 'replaced by a corrected version'
   return { found: true, state, version: rec.version, issuedOn: rec.approved_at ? rec.approved_at.slice(0, 10) : null }
 }

@@ -88,12 +88,28 @@ export function updateBill(db: Db, visitId: number, total: number, discount: num
   enqueue(db, 'visit', visitId)
 }
 
+/**
+ * Cancel a visit (wrong patient, test entry, patient left). The visit disappears from the register, totals and charts,
+ * and money taken for it leaves the cash total (it is given back). An approved report is not deleted: it is withdrawn,
+ * which keeps it on file, stops it counting as the patient's history, and tells the online verification page.
+ */
 export function cancelVisit(db: Db, visitId: number, reason: string): void {
-  const approved = db.get('SELECT 1 AS x FROM reports WHERE visit_id = ? AND status = ?', visitId, 'approved')
-  if (approved) throw new Error('This visit already has an approved report and cannot be cancelled')
-  db.run('UPDATE visits SET cancelled = 1 WHERE id = ?', visitId)
-  audit(db, 'visit.cancel', 'visits', visitId, reason)
-  enqueue(db, 'visit', visitId)
+  const why = (reason ?? '').trim()
+  if (why.length < 3) throw new Error('Please write the reason for cancelling.')
+  const v = db.get<{ cancelled: number; source: string }>('SELECT cancelled, source FROM visits WHERE id = ?', visitId)
+  if (!v) throw new Error('Visit not found')
+  if (v.cancelled) throw new Error('This visit is already cancelled.')
+  if (v.source === 'imported') throw new Error('Old imported reports cannot be cancelled.')
+  const now = nowIso()
+  db.tx(() => {
+    for (const r of db.all<{ id: number }>("SELECT id FROM reports WHERE visit_id = ? AND status = 'approved'", visitId)) {
+      db.run("UPDATE reports SET is_current = 0, superseded_at = ?, reason = ?, pdf_path = NULL WHERE id = ?", now, `WITHDRAWN: ${why}`, r.id)
+      enqueue(db, 'report', r.id)
+    }
+    db.run('UPDATE visits SET cancelled = 1 WHERE id = ?', visitId)
+    audit(db, 'visit.cancel', 'visits', visitId, why)
+    enqueue(db, 'visit', visitId)
+  })
 }
 
 export interface VisitListItem {

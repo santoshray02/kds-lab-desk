@@ -5,8 +5,28 @@ import type { PanelDef, ParamDef } from '../../shared/types'
 import { api, ApiError, enterNext, fmtDate, fmtDateTime, money, useApp, useAsync, type Entry } from '../ui'
 
 export function VisitScreen({ visitId }: { visitId: number }) {
-  const { t, go } = useApp()
+  const { t, go, guard, toast, prompt, confirm, askPin } = useApp()
   const entry = useAsync(() => api.results.entry(visitId), [visitId])
+  async function cancelVisit(issued: boolean) {
+    const ps = await api.settings.pinStatus()
+    const pin = ps.ownerSet ? await askPin(t('PIN to cancel a visit')) : ''
+    if (pin === null) return
+    const reason = await prompt({ title: t('Cancel this visit'), label: t('Why is it being cancelled? (kept in the history)'), ok: t('Continue'), minLength: 3 })
+    if (!reason) return
+    const sure = await confirm({
+      title: t('Cancel this visit?'),
+      body: issued
+        ? t('The approved report will be withdrawn and the visit removed from the register and totals. If the patient already has the PDF (for example on WhatsApp) it cannot be taken back. Money taken for this visit is removed from the cash total, so give it back to the patient.')
+        : t('The visit will be removed from the register and totals. Money taken for this visit is removed from the cash total, so give it back to the patient.'),
+      ok: t('Yes, cancel the visit'),
+      danger: true
+    })
+    if (!sure) return
+    if (await guard(api.visits.cancel(visitId, reason, pin || undefined))) {
+      toast(t('Visit cancelled'), 'ok')
+      go({ name: 'today' })
+    }
+  }
   if (entry.loading && !entry.data) return <div className="page">{t('Loading…')}</div>
   if (!entry.data) return <div className="page"><div className="alert bad">{entry.error || t('Not found')}</div></div>
   const e = entry.data
@@ -24,6 +44,8 @@ export function VisitScreen({ visitId }: { visitId: number }) {
       <div className="row noprint">
         <button className="btn ghost" onClick={() => go({ name: 'today' })}>← {t('Back')}</button>
         <button className="btn ghost" onClick={() => go({ name: 'patients', patientId: e.visit.patientId })}>{t('Patient history')}</button>
+        <div className="grow" />
+        {e.status !== 'imported' && <button className="btn ghost" onClick={() => cancelVisit(e.status === 'approved')} data-testid="cancel-visit">✕ {t('Cancel this visit')}</button>}
       </div>
     </div>
   )

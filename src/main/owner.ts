@@ -23,7 +23,7 @@ export function dayReport(db: Db, date: string = localDate()): DayReport {
      FROM visits v JOIN patients p ON p.id = v.patient_id WHERE v.visit_date = ? AND v.cancelled = 0 ORDER BY v.id`,
     date, date
   )
-  const cash = db.get<{ s: number | null }>(`SELECT SUM(amount) AS s FROM payments WHERE ${localDay} = ?`, date)?.s ?? 0
+  const cash = db.get<{ s: number | null }>(`SELECT SUM(y.amount) AS s FROM payments y JOIN visits cv ON cv.id = y.visit_id WHERE cv.cancelled = 0 AND date(y.paid_at, 'localtime') = ?`, date)?.s ?? 0
   const visits = rows.map((r) => ({
     id: r.id, sampleId: r.sample_id, name: r.name, doctor: r.doctor, tests: r.tests ?? '', total: r.total,
     paidToday: r.paid_today, due: Math.max(0, r.total - r.paid_all), reportStatus: r.rstatus ?? 'none'
@@ -102,7 +102,7 @@ export function insights(db: Db, n = 30): Insights {
   const pTo = localDate(addDays(end, -n))
 
   const billedBy = new Map(db.all<any>(`SELECT visit_date d, SUM(total) b, COUNT(*) c FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ? GROUP BY visit_date`, from, to).map((r) => [r.d, r]))
-  const cashBy = new Map(db.all<any>(`SELECT ${localDay} d, SUM(amount) s FROM payments WHERE ${localDay} BETWEEN ? AND ? GROUP BY d`, from, to).map((r) => [r.d, r.s]))
+  const cashBy = new Map(db.all<any>(`SELECT date(y.paid_at, 'localtime') d, SUM(y.amount) s FROM payments y JOIN visits cv ON cv.id = y.visit_id WHERE cv.cancelled = 0 AND date(y.paid_at, 'localtime') BETWEEN ? AND ? GROUP BY d`, from, to).map((r) => [r.d, r.s]))
   const days = Array.from({ length: n }, (_, i) => {
     const date = localDate(addDays(end, -(n - 1 - i)))
     const b = billedBy.get(date)
@@ -110,7 +110,7 @@ export function insights(db: Db, n = 30): Insights {
   })
   const span = (a: string, b: string) => {
     const v = db.get<any>(`SELECT COALESCE(SUM(total),0) billed, COUNT(*) visits, COUNT(DISTINCT patient_id) patients FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ?`, a, b)!
-    const c = db.get<any>(`SELECT COALESCE(SUM(amount),0) s FROM payments WHERE ${localDay} BETWEEN ? AND ?`, a, b)!.s
+    const c = db.get<any>(`SELECT COALESCE(SUM(y.amount),0) s FROM payments y JOIN visits cv ON cv.id = y.visit_id WHERE cv.cancelled = 0 AND date(y.paid_at, 'localtime') BETWEEN ? AND ?`, a, b)!.s
     return { billed: v.billed as number, cash: c as number, visits: v.visits as number, patients: v.patients as number }
   }
   const cur = span(from, to)
