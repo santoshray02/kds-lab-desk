@@ -44,6 +44,8 @@ export interface ReportData {
   sentOut: { name: string; sentTo: string; received: boolean }[]
   qrSvg: string
   qrCaption: string
+  /** short integrity code printed under the QR; changes if any result changes */
+  verifyCode?: string
   approvedAtText: string
 }
 
@@ -109,64 +111,80 @@ export function renderReportHtml(d: ReportData): string {
     : ''
   const header = d.letterhead
     ? ''
-    : `<div class="lh"><div class="lab">${esc(d.lab.name)}</div><div class="tag">${esc(d.lab.tagline)}</div><div class="addr">${esc(d.lab.address)}</div></div>`
+    : `<div class="lh"><div class="l"><div class="lab">${esc(d.lab.name)}</div><div class="tag">${esc(d.lab.tagline)}</div></div><div class="addr">${esc(d.lab.address)}</div></div>`
+  const flagged = d.sections.flatMap((x) => x.panels.flatMap((p) => p.rows)).filter((r) => r.value !== '' && (r.flag === 'H' || r.flag === 'L'))
+  const crit = flagged.filter((r) => r.critical).length
+  const summary = flagged.length
+    ? `<div class="sum"><b>${flagged.length} result${flagged.length > 1 ? 's' : ''} outside the reference range${crit ? ` (${crit} critical)` : ''}:</b><span>${flagged.slice(0, 5).map((r) => `${esc(r.name.replace(/\s*\(.*\)$/, ''))} ${esc(r.value)} ${r.flag}`).join(' · ')}${flagged.length > 5 ? ` · +${flagged.length - 5} more` : ''}</span></div>`
+    : ''
   const asked = d.testAsked ? `<div class="asked">Test Asked : ${esc(d.testAsked)}</div>` : ''
   const corr = d.correctionNote ? `<div class="corr">${esc(d.correctionNote)}</div>` : ''
   const wm = d.watermark ? `<div class="wm">${esc(d.watermark)}</div>` : ''
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(d.sampleId)}</title><style>
 @page { size: ${page}; margin: ${mt}mm 10mm ${mb}mm 10mm; }
+:root{--ac:#2b3a8f;--ac2:#eef0fa;--ink:#161a2b;--mut:#5d6479;--line:#d9dcea;--bad:#b3261e;--badbg:#fdf0ee}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{font:11pt/1.35 "Segoe UI","Noto Sans",Arial,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font:10.5pt/1.4 "Segoe UI","Noto Sans",Arial,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 table.page{width:100%;border-collapse:collapse}
 table.page>thead{display:table-header-group}
 table.page>tfoot{display:table-footer-group}
 table.page>thead>tr>td,table.page>tbody>tr>td,table.page>tfoot>tr>td{padding:0}
-.lh{text-align:center;border-bottom:2px solid #3a3a8c;padding-bottom:5px;margin-bottom:6px}
-.lab{font:800 22pt/1.1 "Segoe UI",Arial,sans-serif;color:#3a3a8c;letter-spacing:.06em}
-.tag{font-weight:600;font-size:11pt}
-.addr{font-size:9.5pt}
-.pt{display:grid;grid-template-columns:1.25fr 1fr;gap:1px 14px;font-size:10.5pt;padding:4px 2px;border-bottom:1px solid #777;margin-bottom:6px}
+.lh{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:5px solid var(--ac);padding:7px 2px 7px;margin-bottom:7px;border-bottom:1px solid var(--line)}
+.lh .l{flex:1}
+.lab{font:800 22pt/1.05 "Segoe UI",Arial,sans-serif;color:var(--ac);letter-spacing:.04em}
+.tag{font-weight:600;font-size:10.5pt;color:var(--mut);margin-top:2px}
+.addr{font-size:9pt;color:var(--mut);text-align:right;max-width:70mm;line-height:1.35}
+.pt{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:5px 14px;background:var(--ac2);border:1px solid var(--line);border-radius:6px;padding:7px 10px;margin-bottom:6px}
+.pt div{font-size:10.5pt;font-weight:700;min-width:0}
+.pt div span{display:block;font-size:7.5pt;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
 .pt .nm{text-transform:uppercase}
-.pt b{font-weight:700}
-.asked{font-weight:600;font-size:10.5pt;margin:2px 2px 4px}
-.corr{border:1px solid #c2185b;color:#c2185b;font-size:9.5pt;padding:3px 6px;margin:2px 0 6px}
+.sum{display:flex;gap:8px;align-items:flex-start;border:1px solid #f0c9c4;background:var(--badbg);color:var(--bad);border-radius:6px;padding:4px 9px;margin:0 0 6px;font-size:9.5pt}
+.sum b{white-space:nowrap}
+.sum.ok{border-color:#c8e3cf;background:#eff9f1;color:#1d6b35}
+.asked{font-weight:600;font-size:9.5pt;color:var(--mut);margin:2px 2px 4px}
+.corr{border:1px solid #c2185b;color:#c2185b;border-radius:6px;font-size:9.5pt;padding:3px 8px;margin:2px 0 6px}
 .section{margin-bottom:8px}
-.stitle{break-after:avoid;page-break-after:avoid;text-align:center;font-weight:800;letter-spacing:.45em;font-size:11.5pt;padding:3px 0;border-top:1px solid #222;border-bottom:1px solid #222;margin:6px 0 4px}
-.ptitle{font-weight:700;font-size:10.5pt;margin:5px 0 2px;text-decoration:underline;break-after:avoid;page-break-after:avoid}
+.stitle{break-after:avoid;page-break-after:avoid;text-align:center;font-weight:800;letter-spacing:.4em;font-size:10.5pt;padding:3px 0 3px .4em;background:var(--ac);color:#fff;border-radius:4px;margin:8px 0 4px}
+.ptitle{font-weight:700;font-size:10.5pt;margin:6px 0 2px;color:var(--ac);break-after:avoid;page-break-after:avoid}
 .panel.small{break-inside:avoid;page-break-inside:avoid}
 table.res{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-table.res col.c1{width:46%}table.res col.c2{width:17%}table.res col.c3{width:14%}table.res col.c4{width:23%}
-table.res th{text-align:left;font-size:10pt;border-bottom:1px solid #444;padding:2px 3px}
-table.res td{padding:2px 3px;font-size:10.5pt;vertical-align:top}
+table.res col.c1{width:44%}table.res col.c2{width:19%}table.res col.c3{width:14%}table.res col.c4{width:23%}
+table.res th{text-align:left;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);border-bottom:1.5px solid var(--ac);padding:2px 5px}
+table.res td{padding:2.5px 5px;font-size:10.5pt;vertical-align:top;border-bottom:1px solid #eceef6}
+table.res td.u,table.res td.r{color:var(--mut);font-size:9.5pt}
 table.res tr{break-inside:avoid;page-break-inside:avoid}
-table.res tr.grp td{font-weight:700;font-size:10pt;padding-top:5px;text-transform:uppercase}
-table.res tr.ab td.v{font-weight:800}
-table.res td.v{font-weight:400}
+table.res tr.grp td{font-weight:700;font-size:9pt;padding-top:6px;text-transform:uppercase;color:var(--ac);border-bottom:0}
+table.res tr.ab td{background:var(--badbg)}
+table.res tr.ab td.n,table.res tr.ab td.v{font-weight:800}
+table.res tr.ab td.v{color:var(--bad)}
+table.res td.v{font-weight:500}
 .widal-head{margin:4px 2px;font-size:10.5pt}
-table.grid{width:100%;border-collapse:collapse;margin:4px 0;font-size:10.5pt}
-table.grid th,table.grid td{border:1px solid #444;padding:2px 4px;text-align:center}
+table.grid{width:100%;border-collapse:collapse;margin:4px 0;font-size:10pt}
+table.grid th,table.grid td{border:1px solid var(--line);padding:2px 4px;text-align:center}
+table.grid th{background:var(--ac2);font-size:8.5pt}
 table.grid td.ant,table.grid th.ant{text-align:left}
-.sent{font-size:9.5pt;margin:6px 2px;border:1px dashed #777;padding:3px 6px}
-.foot{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #777;padding-top:5px;margin-top:6px;gap:10px;font-size:9.5pt}
-.foot .sig{text-align:center;min-width:42mm;font-weight:600;font-size:10.5pt}
-.foot .sig small{display:block;font-weight:400;font-size:9.5pt}
-.foot .mid{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
-.foot .qr{width:17mm;height:17mm}
-.foot .qr svg{width:100%;height:100%}
-.disc{text-align:center;font-size:9pt;margin-top:3px}
+.sent{font-size:9.5pt;margin:6px 2px;border:1px dashed var(--mut);border-radius:6px;padding:3px 8px}
+.foot{display:flex;justify-content:space-between;align-items:flex-end;border-top:1.5px solid var(--ac);padding-top:6px;margin-top:6px;gap:10px;font-size:9pt}
+.foot .sig{text-align:center;min-width:46mm;font-weight:700;font-size:10.5pt;padding-top:9mm}
+.foot .sig i{display:block;border-top:1px solid var(--ink);margin-bottom:2px}
+.foot .sig small{display:block;font-weight:400;font-size:9pt;color:var(--mut)}
+.foot .mid{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--mut);font-size:8pt}
+.foot .qr{width:21mm;height:21mm;padding:1mm;border:1px solid var(--line);border-radius:3px;background:#fff}
+.foot .qr svg{width:100%;height:100%;display:block}
+.foot .code{font:600 8.5pt "Consolas","Courier New",monospace;color:var(--ink);letter-spacing:.05em}
+.disc{text-align:center;font-size:8.5pt;color:var(--mut);margin-top:3px}
 .wm{position:fixed;top:45%;left:0;right:0;text-align:center;font:800 70pt/1 Arial,sans-serif;color:rgba(0,0,0,.07);transform:rotate(-25deg);pointer-events:none;z-index:-1}
 </style></head><body>${wm}
 <table class="page"><thead><tr><td>${header}
 <div class="pt">
-<div class="nm">Name : <b>${esc(d.title ? d.title + '. ' : '')}${esc(d.patientName)}</b></div><div>Sample ID : <b>${esc(d.sampleId)}</b></div>
-<div>Ref. By : <b>${esc(d.doctor)}</b></div><div>Date : <b>${esc(d.dateText)}</b></div>
-<div>Age / Sex : <b>${esc(d.ageText)} / ${esc(d.sexText)}</b></div><div>Specimen : <b>${esc(d.specimen)}</b></div>
+<div class="nm"><span>Patient</span>${esc(d.title ? d.title + '. ' : '')}${esc(d.patientName)}</div><div><span>Age / Sex</span>${esc(d.ageText)} / ${esc(d.sexText)}</div><div><span>Sample ID</span>${esc(d.sampleId)}</div>
+<div><span>Referred by</span>${esc(d.doctor)}</div><div><span>Specimen</span>${esc(d.specimen)}</div><div><span>Date</span>${esc(d.dateText)}</div>
 </div></td></tr></thead>
 <tfoot><tr><td><div class="foot">
-<div class="sig">${esc(d.lab.doctorName)}<small>${esc(d.lab.doctorQual)}</small></div>
-<div class="mid"><div class="qr">${d.qrSvg}</div><div>${esc(d.qrCaption)}</div></div>
-<div class="sig">${esc(d.lab.techName)}<small>${esc(d.lab.techQual)}</small></div>
+<div class="sig"><i></i>${esc(d.lab.doctorName)}<small>${esc(d.lab.doctorQual)}</small></div>
+<div class="mid"><div class="qr">${d.qrSvg}</div><div>${esc(d.qrCaption)}</div>${d.verifyCode ? `<div class="code">${esc(d.verifyCode)}</div>` : ''}</div>
+<div class="sig"><i></i>${esc(d.lab.techName)}<small>${esc(d.lab.techQual)}</small></div>
 </div><div class="disc">${esc(d.lab.footer)}${d.version > 1 ? ` · Version ${d.version}` : ''}</div></td></tr></tfoot>
-<tbody><tr><td>${asked}${corr}${sections}${sent}</td></tr></tbody></table></body></html>`
+<tbody><tr><td>${summary}${asked}${corr}${sections}${sent}</td></tr></tbody></table></body></html>`
 }

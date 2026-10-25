@@ -318,3 +318,20 @@ describe('backups', () => {
     restored.close()
   })
 })
+
+describe('report design extras', () => {
+  it('summarises abnormal results and the verify code changes when a result changes', async () => {
+    const { reportHtml, verifyCode } = await import('../src/main/reportsvc')
+    const { visitId } = register('Code Person', '9800000031', ['CBC'])
+    const rid = getEntry(db, visitId).reportId!
+    saveDraft(db, rid, cbc)
+    approveReport(db, rid, {})
+    const html = await reportHtml(db, rid)
+    expect(html).toContain('outside the reference range')
+    const d = buildReportData(db, rid)
+    const a = verifyCode(d)
+    d.sections[0].panels[0].rows[0].value = '12.0'
+    expect(verifyCode(d)).not.toBe(a)
+    expect(html).toContain(a)
+  })
+})

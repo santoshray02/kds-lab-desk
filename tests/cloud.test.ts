@@ -174,10 +174,14 @@ describe('sync to the cloud (mock server)', () => {
 })
 
 describe('report link, QR and WhatsApp level', () => {
-  it('QR encodes the sample ID offline and the verification URL once cloud is configured', () => {
+  it('QR carries a readable summary with a verify code offline and the verification URL once cloud is configured', () => {
     const a = approvedVisit('Qr Person', '9800000008')
     expect(reportLink(db, a.reportId)).toBeNull()
-    expect(qrTarget(db, a.reportId).text).toBe(a.sampleId)
+    const off = qrTarget(db, a.reportId)
+    expect(off.text).toContain(`Report ${a.sampleId}`)
+    expect(off.text).toContain('Patient: ')
+    expect(off.text).toContain(`Verify code: ${off.code}`)
+    expect(off.code).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/)
     enable()
     const code = db.get<{ share_code: string }>('SELECT share_code FROM reports WHERE id = ?', a.reportId)!.share_code
     expect(reportLink(db, a.reportId)).toBe(`https://reports.example.test/r/${code}`)

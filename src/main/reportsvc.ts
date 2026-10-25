@@ -1,7 +1,8 @@
 import { mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import QRCode from 'qrcode'
-import { renderReportHtml } from '../shared/reportHtml'
+import { renderReportHtml, type ReportData } from '../shared/reportHtml'
 import type { Db } from './db'
 import { AppError, buildReportData } from './results'
 import { getSettings } from './settings'
@@ -14,20 +15,41 @@ export function reportLink(db: Db, reportId: number): string | null {
   return `${s.cloud.reportBase.replace(/\/+$/, '')}/r/${code}`
 }
 
-/** What the QR code encodes: the verification URL when cloud is on, otherwise the sample ID. */
-export function qrTarget(db: Db, reportId: number): { text: string; caption: string } {
+/** Short code derived from the patient, sample, version and every printed result; any edit changes it. */
+export function verifyCode(d: ReportData): string {
+  const body = d.sections.flatMap((s) => s.panels.flatMap((p) => p.rows.map((r) => `${p.name}|${r.name}|${r.value}|${r.unit}`)))
+  const h = createHash('sha256').update([d.sampleId, d.version, d.patientName, d.dateText, ...body].join('\n')).digest('hex').slice(0, 12).toUpperCase()
+  return `${h.slice(0, 4)}-${h.slice(4, 8)}-${h.slice(8, 12)}`
+}
+
+/**
+ * What the QR code encodes: the verification URL when cloud is on; otherwise a readable
+ * summary any phone camera can show, ending in the integrity code (checkable at the lab).
+ */
+export function qrTarget(db: Db, reportId: number, data?: ReportData): { text: string; caption: string; code: string } {
+  const d = data ?? buildReportData(db, reportId)
+  const code = verifyCode(d)
   const link = reportLink(db, reportId)
-  const sample = db.get<{ sample_id: string }>('SELECT v.sample_id FROM reports r JOIN visits v ON v.id = r.visit_id WHERE r.id = ?', reportId)?.sample_id ?? ''
-  return link
-    ? { text: link, caption: 'Scan to verify this report online' }
-    : { text: sample, caption: `Sample ID ${sample}` }
+  if (link) return { text: link, caption: 'Scan to verify this report online', code }
+  const text = [
+    d.lab.name,
+    `Report ${d.sampleId}${d.version > 1 ? ` (version ${d.version})` : ''}`,
+    `Patient: ${d.title ? d.title + '. ' : ''}${d.patientName}`,
+    `Age/Sex: ${d.ageText} / ${d.sexText}`,
+    `Date: ${d.dateText}`,
+    d.watermark ? `Status: ${d.watermark}` : `Signed: ${d.lab.doctorName}`,
+    `Verify code: ${code}`,
+    'Not valid for medico legal purpose.'
+  ].join('\n')
+  return { text, caption: 'Scan for report details', code }
 }
 
 export async function reportHtml(db: Db, reportId: number): Promise<string> {
   const data = buildReportData(db, reportId)
-  const q = qrTarget(db, reportId)
+  const q = qrTarget(db, reportId, data)
   data.qrSvg = await QRCode.toString(q.text, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' })
   data.qrCaption = q.caption
+  data.verifyCode = q.code
   return renderReportHtml(data)
 }
 
