@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Overview } from './Overview'
 import { api, fmtDate, money, todayStr, useApp, useAsync } from '../ui'
 
 export function Owner() {
   const { t } = useApp()
-  const [tab, setTab] = useState<'day' | 'dues' | 'doctors' | 'pending'>('day')
-  const tabs: [typeof tab, string][] = [['day', 'Day register'], ['dues', 'Cash & dues'], ['doctors', 'Doctor-wise (monthly)'], ['pending', 'Pending']]
+  const [tab, setTab] = useState<'overview' | 'day' | 'dues' | 'doctors' | 'pending'>('overview')
+  const tabs: [typeof tab, string][] = [['overview', 'Overview'], ['day', 'Day register'], ['dues', 'Cash & dues'], ['doctors', 'Doctor-wise (monthly)'], ['pending', 'Pending']]
   return (
     <div className="page" data-testid="owner">
       <div className="row noprint">
@@ -14,6 +15,7 @@ export function Owner() {
       <div className="tabs noprint">
         {tabs.map(([k, label]) => <button key={k} className={`tab${tab === k ? ' on' : ''}`} onClick={() => setTab(k)} data-testid={`tab-${k}`}>{t(label)}</button>)}
       </div>
+      {tab === 'overview' && <Overview />}
       {tab === 'day' && <Day />}
       {tab === 'dues' && <Dues />}
       {tab === 'doctors' && <Doctors />}

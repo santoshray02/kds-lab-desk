@@ -1,16 +1,19 @@
 import { execFile } from 'node:child_process'
+import { readFileSync } from 'node:fs'
+import { basename } from 'node:path'
 import type { Db } from './db'
 import { AppError } from './results'
 import { reportLink } from './reportsvc'
 import { getSettings } from './settings'
 
 export interface WaPlan {
+  reportId: number
   level: 'A' | 'B'
   phone: string // 91XXXXXXXXXX
   text: string
   appUrl: string
   webUrl: string
-  target: 'web' | 'app'
+  target: 'web' | 'app' | 'evolution'
 }
 
 export function buildWaPlan(db: Db, reportId: number): WaPlan {
@@ -36,7 +39,7 @@ export function buildWaPlan(db: Db, reportId: number): WaPlan {
   }
   const phone = `91${row.phone}`
   const enc = encodeURIComponent(text)
-  return { level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://web.whatsapp.com/send?phone=${phone}&text=${enc}`, target: s.waTarget === 'app' ? 'app' : 'web' }
+  return { reportId, level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://web.whatsapp.com/send?phone=${phone}&text=${enc}`, target: s.waTarget === 'app' ? 'app' : s.waTarget === 'evolution' && s.evolution.url && s.evolution.instance && s.evolution.apiKey ? 'evolution' : 'web' }
 }
 
 /** Put a file on the Windows clipboard as a file (CF_HDROP) so Ctrl+V in WhatsApp attaches it. */
@@ -56,4 +59,49 @@ export function copyFileToClipboard(path: string): Promise<void> {
       (err, _out, stderr) => (err ? reject(new Error(stderr || err.message)) : resolve())
     )
   })
+}
+
+let fetchImpl: typeof fetch = (...a) => fetch(...a)
+/** Tests swap the network here. */
+export function setWaFetch(f: typeof fetch): void {
+  fetchImpl = f
+}
+
+const evoBase = (url: string) => url.trim().replace(/\/+$/, '')
+
+/**
+ * Evolution API (https://github.com/EvolutionAPI/evolution-api): the lab's own gateway sends the message.
+ * Level A sends the PDF as a document with the message as caption; level B sends the text with the link.
+ */
+export async function sendViaEvolution(db: Db, reportId: number, pdfPath: string | null): Promise<void> {
+  const plan = buildWaPlan(db, reportId)
+  const { url, instance, apiKey } = getSettings(db).evolution
+  if (!url || !instance || !apiKey) throw new AppError('EVOLUTION', 'Evolution API is not set up (Settings → Patients and WhatsApp).')
+  const headers = { 'Content-Type': 'application/json', apikey: apiKey }
+  const sendMedia = plan.level === 'A' && pdfPath
+  const res = await fetchImpl(`${evoBase(url)}/message/${sendMedia ? 'sendMedia' : 'sendText'}/${encodeURIComponent(instance)}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(
+      sendMedia
+        ? { number: plan.phone, mediatype: 'document', mimetype: 'application/pdf', caption: plan.text, media: readFileSync(pdfPath).toString('base64'), fileName: basename(pdfPath) }
+        : { number: plan.phone, text: plan.text }
+    )
+  })
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new AppError('EVOLUTION', `WhatsApp gateway answered ${res.status}. ${body.slice(0, 200)}`)
+  }
+}
+
+export async function testEvolution(url: string, instance: string, apiKey: string): Promise<{ ok: boolean; message: string }> {
+  try {
+    const res = await fetchImpl(`${evoBase(url)}/instance/connectionState/${encodeURIComponent(instance)}`, { headers: { apikey: apiKey } })
+    if (!res.ok) return { ok: false, message: `The gateway answered ${res.status}. Check the address, instance name and key.` }
+    const j: any = await res.json().catch(() => ({}))
+    const state = j?.instance?.state ?? j?.state ?? 'unknown'
+    return state === 'open' ? { ok: true, message: 'Connected: WhatsApp is linked and ready.' } : { ok: false, message: `The gateway is reachable but WhatsApp is "${state}". Scan the QR code in the Evolution manager.` }
+  } catch (e) {
+    return { ok: false, message: `Cannot reach the gateway: ${(e as Error).message}` }
+  }
 }

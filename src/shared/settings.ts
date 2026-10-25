@@ -24,7 +24,9 @@ export interface Settings {
   waMessageEn: string
   waMessageHi: string
   /** where "Send on WhatsApp" opens the chat */
-  waTarget: 'web' | 'app'
+  waTarget: 'web' | 'app' | 'evolution'
+  /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
+  evolution: { url: string; instance: string; apiKey: string }
   analyzer: 'manual' | string
   silentPrint: boolean
   printerName: string
@@ -73,6 +75,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waMessageEn: 'Namaste {name}, your K.D.S. Pathology report ({sample}) is ready.',
   waMessageHi: 'नमस्ते {name} जी, आपकी K.D.S. Pathology की रिपोर्ट ({sample}) तैयार है।',
   waTarget: 'web',
+  evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',
   silentPrint: false,
   printerName: '',

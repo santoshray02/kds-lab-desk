@@ -18,6 +18,10 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 }
 
+// This is a forms-and-tables app on one PC: no GPU process work, and a small JS heap cap keep RAM and CPU low
+app.disableHardwareAcceleration()
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=192')
+
 let win: BrowserWindow | null = null
 
 function createWindow() {

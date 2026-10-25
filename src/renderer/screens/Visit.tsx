@@ -255,7 +255,7 @@ function ValueInput({ p, value, placeholder, bad, auto, onChange }: { p: ParamDe
 /* --------------------------------------------------------------- approved */
 
 function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
-  const { t, toast, guard, askPin, prompt, settings, go } = useApp()
+  const { t, toast, guard, askPin, confirm, prompt, settings, go } = useApp()
   const versions = useAsync(() => api.results.versions(e.visit.id), [e.visit.id, e.reportId])
   const [selected, setSelected] = useState<number | null>(null)
   const reportId = selected ?? e.reportId!
@@ -283,6 +283,18 @@ function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
     const r = await guard(api.whatsapp.send(reportId))
     setBusy('')
     if (!r) return
+    if (r.opened === 'evolution') { toast(t('Sent on WhatsApp automatically.'), 'ok'); return }
+    if (r.error) toast(`${t('Automatic sending failed, opened WhatsApp instead')}: ${r.error}`, '')
+    if (r.level === 'A' && r.opened === 'web') {
+      // WhatsApp Web cannot take a file from a link, so the last step is by hand: tell the user clearly
+      const again = await confirm({
+        title: t('Attach the PDF in WhatsApp'),
+        body: <ol><li>{t('Click the message box in the WhatsApp chat.')}</li><li>{t('Press Ctrl+V. The PDF appears as an attachment.')}</li><li>{t('Press Enter to send.')}</li></ol>,
+        ok: t('Copy the PDF again')
+      })
+      if (again) { await guard(api.whatsapp.copyPdf(reportId)); toast(t('PDF copied. Press Ctrl+V in WhatsApp.'), 'ok') }
+      return
+    }
     if (r.level === 'A') toast(r.copied ? t('Press Ctrl+V then Enter in WhatsApp (the PDF is copied).') : t('WhatsApp opened. The PDF could not be copied; attach it from the saved file.'), r.copied ? 'ok' : '')
     else toast(t('WhatsApp opened with the report link. Press Enter to send.'), 'ok')
   }

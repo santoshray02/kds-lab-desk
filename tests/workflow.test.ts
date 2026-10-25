@@ -365,3 +365,20 @@ describe('tests that can be done in the lab or sent out', () => {
     expect(() => setPanelSentOut(db, loadMaster(db).find((p) => p.code === 'OTHER_SO')!.id, false)).toThrow()
   })
 })
+
+describe('overview insights', () => {
+  it('adds up days, tests, doctors and weekdays for the period', async () => {
+    const { insights } = await import('../src/main/owner')
+    register('Chart One', '9800000061', ['CBC'], { paid: 200 })
+    register('Chart Two', '9800000062', ['CBC', 'ESR'], { doctor: 'Dr. B. Singh' })
+    const i = insights(db, 30)
+    expect(i.days).toHaveLength(30)
+    expect(i.days[29].visits).toBe(2)
+    expect(i.totals.visits).toBe(2)
+    expect(i.totals.cash).toBe(200)
+    expect(i.topTests[0]).toMatchObject({ count: 2 })
+    expect(i.doctors.map((d) => d.doctor).sort()).toEqual(['Dr. A. Kumar', 'Dr. B. Singh'])
+    expect(i.weekday.reduce((a, b) => a + b, 0)).toBe(2)
+    expect(i.totals.due).toBeGreaterThan(0)
+  })
+})

@@ -9,7 +9,7 @@ import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
 import { htmlToPdf, listPrinters, printHtml } from './electronBits'
 import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, setPanelSentOut, type ParamEdit } from './master'
-import { dayReport, doctorMonthly, duesReport, pendingReport } from './owner'
+import { dayReport, insights, doctorMonthly, duesReport, pendingReport } from './owner'
 import { updatePatient, getPatient, peopleByPhone, searchPeople, suggestDoctors, type PatientInput } from './patients'
 import { ensurePdf, reportHtml, reportLink } from './reportsvc'
 import {
@@ -20,7 +20,7 @@ import {
   addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, updateBill,
   type NewVisitInput, type VisitFilter
 } from './visits'
-import { buildWaPlan, copyFileToClipboard } from './whatsapp'
+import { buildWaPlan, copyFileToClipboard, sendViaEvolution, testEvolution } from './whatsapp'
 import { seedDemo, clearDemo } from './demo'
 import { runImport, importLog, type ImportProgress } from './importer/run'
 import { syncStatus, syncNow, testConnection, enqueueEverything, setPdfProvider } from './sync'
@@ -59,6 +59,31 @@ export function makeHandlers(ctx: Ctx) {
   const pdfWriter = (p: string, b: Buffer) => writeFileSync(p, b)
   const pdfOf = (reportId: number) => ensurePdf(db, ctx.dataDir, reportId, htmlToPdf, pdfWriter)
   setPdfProvider(pdfOf)
+  /** Level A: copy the PDF to the clipboard; then open the chat in the browser or in the desktop app. */
+  const openChat = async (plan: ReturnType<typeof buildWaPlan>, pdf: string, target: 'web' | 'app' | 'evolution') => {
+    let copied = false
+    if (plan.level === 'A') {
+      try {
+        await copyFileToClipboard(pdf)
+        copied = true
+      } catch {
+        copied = false
+      }
+    }
+    let opened: 'app' | 'web' = target === 'app' ? 'app' : 'web'
+    if (opened === 'web') {
+      await shell.openExternal(plan.webUrl)
+    } else {
+      try {
+        await shell.openExternal(plan.appUrl)
+      } catch {
+        opened = 'web'
+        await shell.openExternal(plan.webUrl)
+      }
+    }
+    audit(db, 'whatsapp.send', 'reports', plan.reportId, `${plan.level}/${opened}`)
+    return { level: plan.level, copied, opened: opened as 'app' | 'web' | 'evolution', pdf }
+  }
 
   return {
     app: {
@@ -202,29 +227,28 @@ export function makeHandlers(ctx: Ctx) {
       send: async (reportId: number) => {
         const plan = buildWaPlan(db, reportId)
         const pdf = await pdfOf(reportId)
-        let copied = false
-        if (plan.level === 'A') {
+        if (plan.target === 'evolution') {
           try {
-            await copyFileToClipboard(pdf)
-            copied = true
-          } catch {
-            copied = false
+            await sendViaEvolution(db, reportId, pdf)
+            audit(db, 'whatsapp.send', 'reports', reportId, `${plan.level}/evolution`)
+            return { level: plan.level, copied: false, opened: 'evolution' as const, pdf, error: '' }
+          } catch (e) {
+            // the gateway is down or not linked: carry on with WhatsApp Web so the report still gets out
+            audit(db, 'whatsapp.evolution_failed', 'reports', reportId, (e as Error).message)
+            const r = await openChat(plan, pdf, 'web')
+            return { ...r, error: (e as Error).message }
           }
         }
-        let opened: 'app' | 'web' = plan.target
-        if (plan.target === 'web') {
-          await shell.openExternal(plan.webUrl)
-        } else {
-          try {
-            await shell.openExternal(plan.appUrl)
-          } catch {
-            opened = 'web'
-            await shell.openExternal(plan.webUrl)
-          }
-        }
-        audit(db, 'whatsapp.send', 'reports', reportId, `${plan.level}/${opened}`)
-        return { level: plan.level, copied, opened, pdf }
+        return { ...(await openChat(plan, pdf, plan.target)), error: '' }
       },
+      copyPdf: async (reportId: number) => {
+        await copyFileToClipboard(await pdfOf(reportId))
+        return true
+      },
+      showPdf: async (reportId: number) => {
+        shell.showItemInFolder(await pdfOf(reportId))
+      },
+      testEvolution: (url: string, instance: string, apiKey: string) => testEvolution(url, instance, apiKey),
       openWeb: async (reportId: number) => {
         const plan = buildWaPlan(db, reportId)
         await shell.openExternal(plan.webUrl)
@@ -236,7 +260,8 @@ export function makeHandlers(ctx: Ctx) {
       day: (date?: string) => dayReport(db, date),
       dues: () => duesReport(db),
       doctors: (ym?: string) => doctorMonthly(db, ym),
-      pending: () => pendingReport(db)
+      pending: () => pendingReport(db),
+      insights: (days?: number) => insights(db, days)
     },
 
     backup: {

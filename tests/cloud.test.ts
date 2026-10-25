@@ -239,3 +239,29 @@ describe('report page logic (Edge Function)', () => {
     expect(publicStatus(null, false)).toEqual({ found: false })
   })
 })
+
+describe('Evolution API gateway', () => {
+  it('sends the PDF as a document, falls back to text for level B, and reports a bad key', async () => {
+    const { sendViaEvolution, setWaFetch, testEvolution } = await import('../src/main/whatsapp')
+    const a = approvedVisit('Evo Person', '9800000051')
+    const pdf = join(mkdtempSync(join(tmpdir(), 'kds-evo-')), 'r.pdf')
+    writeFileSync(pdf, '%PDF-1.4 test')
+    const calls: { url: string; headers: any; body: any }[] = []
+    setWaFetch((async (url: any, init: any) => {
+      calls.push({ url: String(url), headers: init?.headers, body: init?.body ? JSON.parse(init.body) : null })
+      if (init?.headers?.apikey !== 'good') return new Response('nope', { status: 401 })
+      return new Response(JSON.stringify({ instance: { state: 'open' } }), { status: 200 })
+    }) as typeof fetch)
+    setSettings(db, { waTarget: 'evolution', evolution: { url: 'http://gw.test:8080/', instance: 'kds', apiKey: 'good' } })
+    await sendViaEvolution(db, a.reportId, pdf)
+    expect(calls[0].url).toBe('http://gw.test:8080/message/sendMedia/kds')
+    expect(calls[0].body).toMatchObject({ number: '919800000051', mediatype: 'document', mimetype: 'application/pdf', fileName: 'r.pdf' })
+    expect(Buffer.from(calls[0].body.media, 'base64').toString()).toBe('%PDF-1.4 test')
+    expect(calls[0].body.caption).toContain('Evo Person')
+    expect((await testEvolution('http://gw.test:8080', 'kds', 'good')).ok).toBe(true)
+    setSettings(db, { evolution: { url: 'http://gw.test:8080', instance: 'kds', apiKey: 'bad' } })
+    await expect(sendViaEvolution(db, a.reportId, pdf)).rejects.toThrow(/401/)
+    expect((await testEvolution('http://gw.test:8080', 'kds', 'bad')).ok).toBe(false)
+    setWaFetch((...x) => fetch(...x))
+  })
+})

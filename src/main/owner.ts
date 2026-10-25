@@ -80,3 +80,60 @@ export function pendingReport(db: Db): Pending {
   ).map((r) => ({ visitTestId: r.id, visitId: r.visit_id, sampleId: r.sample_id, name: r.name, test: r.test, sentTo: r.sent_to, sentAt: r.sent_at, date: r.visit_date }))
   return { unreported, sentOut }
 }
+
+export interface Insights {
+  days: { date: string; billed: number; cash: number; visits: number }[]
+  totals: { billed: number; cash: number; visits: number; patients: number; due: number; avgBill: number; turnaroundHours: number | null }
+  previous: { billed: number; cash: number; visits: number; patients: number }
+  topTests: { name: string; count: number; revenue: number }[]
+  doctors: { doctor: string; visits: number }[]
+  weekday: number[]
+}
+
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+
+/** The numbers behind the Overview charts for the last `n` days (today included), with the n days before for comparison. */
+export function insights(db: Db, n = 30): Insights {
+  n = Math.max(7, Math.min(366, Math.round(n)))
+  const end = clock.now()
+  const from = localDate(addDays(end, -(n - 1)))
+  const to = localDate(end)
+  const pFrom = localDate(addDays(end, -(2 * n - 1)))
+  const pTo = localDate(addDays(end, -n))
+
+  const billedBy = new Map(db.all<any>(`SELECT visit_date d, SUM(total) b, COUNT(*) c FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ? GROUP BY visit_date`, from, to).map((r) => [r.d, r]))
+  const cashBy = new Map(db.all<any>(`SELECT ${localDay} d, SUM(amount) s FROM payments WHERE ${localDay} BETWEEN ? AND ? GROUP BY d`, from, to).map((r) => [r.d, r.s]))
+  const days = Array.from({ length: n }, (_, i) => {
+    const date = localDate(addDays(end, -(n - 1 - i)))
+    const b = billedBy.get(date)
+    return { date, billed: b?.b ?? 0, cash: cashBy.get(date) ?? 0, visits: b?.c ?? 0 }
+  })
+  const span = (a: string, b: string) => {
+    const v = db.get<any>(`SELECT COALESCE(SUM(total),0) billed, COUNT(*) visits, COUNT(DISTINCT patient_id) patients FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ?`, a, b)!
+    const c = db.get<any>(`SELECT COALESCE(SUM(amount),0) s FROM payments WHERE ${localDay} BETWEEN ? AND ?`, a, b)!.s
+    return { billed: v.billed as number, cash: c as number, visits: v.visits as number, patients: v.patients as number }
+  }
+  const cur = span(from, to)
+  const due = db.get<any>(
+    `SELECT COALESCE(SUM(MAX(v.total - COALESCE((SELECT SUM(amount) FROM payments y WHERE y.visit_id = v.id), 0), 0)), 0) s
+     FROM visits v WHERE v.cancelled = 0 AND v.source IN ('app','demo') AND v.visit_date BETWEEN ? AND ?`, from, to
+  )!.s as number
+  const turn = db.get<any>(
+    `SELECT AVG((julianday(r.approved_at) - julianday(v.created_at)) * 24) h FROM reports r JOIN visits v ON v.id = r.visit_id
+     WHERE r.version = 1 AND r.approved_at IS NOT NULL AND v.source IN ('app','demo') AND v.visit_date BETWEEN ? AND ?`, from, to
+  )?.h as number | null
+  const topTests = db.all<any>(
+    `SELECT replace(t.name, ' — sent out', '') name, COUNT(*) c, SUM(t.price) rev FROM visit_tests t JOIN visits v ON v.id = t.visit_id
+     WHERE v.cancelled = 0 AND v.source IN ('app','demo') AND v.visit_date BETWEEN ? AND ? GROUP BY t.panel_code ORDER BY c DESC, rev DESC LIMIT 8`, from, to
+  ).map((r) => ({ name: r.name, count: r.c, revenue: r.rev ?? 0 }))
+  const doctors = db.all<any>(
+    `SELECT doctor, COUNT(*) c FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ? GROUP BY doctor COLLATE NOCASE ORDER BY c DESC LIMIT 8`, from, to
+  ).map((r) => ({ doctor: r.doctor, visits: r.c }))
+  const weekday = [0, 0, 0, 0, 0, 0, 0]
+  for (const r of db.all<any>(`SELECT CAST(strftime('%w', visit_date) AS INTEGER) w, COUNT(*) c FROM visits WHERE cancelled = 0 AND source IN ('app','demo') AND visit_date BETWEEN ? AND ? GROUP BY w`, from, to)) weekday[r.w] = r.c
+  void pTo
+  return {
+    days, topTests, doctors, weekday, previous: span(pFrom, pTo),
+    totals: { ...cur, due, avgBill: cur.visits ? cur.billed / cur.visits : 0, turnaroundHours: turn == null ? null : Math.round(turn * 10) / 10 }
+  }
+}

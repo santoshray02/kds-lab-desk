@@ -151,3 +151,26 @@ table.res tr.grp td { background: var(--paper); font: 700 13px var(--mono); lett
 }
 
 table.t select.input { min-width: 110px; }
+
+/* overview charts */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; align-self: flex-start; background: var(--card); }
+.segb { background: none; border: 0; padding: 8px 16px; cursor: pointer; font-size: 16px; border-right: 1px solid var(--line); }
+.segb:last-child { border-right: 0; }
+.segb.on { background: var(--hema); color: #fff; }
+.small { font-size: 14px; }
+.legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.tip { position: absolute; top: 28px; background: #1c2033; color: #fff; border-radius: 8px; padding: 6px 10px; font-size: 14px; line-height: 1.4; pointer-events: none; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.2); }
+.hbars { display: flex; flex-direction: column; gap: 8px; }
+.hb { display: grid; grid-template-columns: minmax(90px, 38%) 1fr 44px; gap: 10px; align-items: center; font-size: 15px; }
+.hb .lb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb .tr { background: #eceef6; border-radius: 4px; height: 10px; }
+.hb .fl { background: var(--hema); height: 100%; border-radius: 4px; min-width: 3px; }
+.hb .vl { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cols { display: flex; align-items: flex-end; gap: 10px; height: 150px; }
+.colb { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.colb .bar { width: 70%; max-width: 34px; background: var(--hema); border-radius: 4px 4px 0 0; min-height: 2px; }
+.colb .vl { font-size: 13px; font-weight: 600; }
+.colb .lb { font-size: 13px; color: var(--muted); }
+.split { display: flex; height: 22px; border-radius: 6px; overflow: hidden; gap: 2px; }
+@media print { .tip { display: none; } }

@@ -73,6 +73,7 @@ function valuesFor(panel: string, p: DemoPerson, r: () => number): Record<string
     case 'LIPID': return { tchol: f(150 + r() * 70, 0), hdl: f(38 + r() * 20, 0), tg: f(90 + r() * 90, 0) }
     case 'WIDAL': return { widal: p.abnormal ? 'Positive' : 'Negative', wo: p.abnormal ? '80' : '0', wh: p.abnormal ? '40' : '0', wah: '0', wbh: '0' }
     case 'MPC': return { mp_pf: 'Negative', mp_pv: 'Negative' }
+    case 'THYROID': return { t3: f(100 + r() * 60, 0), t4: f(6.5 + r() * 3, 1), tsh: f(1.2 + r() * 2, 2) }
     case 'HIV': return { hiv: 'Negative' }
     case 'HBSAG': return { hbsag: 'Negative' }
     case 'ABO': return { abo: ['A', 'B', 'O', 'AB'][Math.floor(r() * 4)], rh: 'Positive' }
@@ -100,6 +101,7 @@ export function seedDemo(db: Db): { visits: number } {
       })
       db.run("UPDATE patients SET source = 'demo' WHERE id = ?", r.patientId)
       db.run("UPDATE visits SET source = 'demo' WHERE id = ?", r.visitId)
+      db.run('UPDATE payments SET paid_at = ? WHERE visit_id = ?', d.toISOString(), r.visitId)
       n++
       // the most recent three visits stay un-reported so the worklist has something to show
       if (p.daysAgo === 0 && i > 0) return

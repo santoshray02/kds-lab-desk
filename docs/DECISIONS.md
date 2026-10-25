@@ -121,3 +121,9 @@ with the reason, so the doctor or a helper can change it later.
 * Updates come from the **public** repo `santoshray02/kds-lab-desk-releases` (installers only, no code or patient data). The app uses electron-updater's generic provider on `https://github.com/santoshray02/kds-lab-desk-releases/releases/latest/download`, so no token is needed. Updates are on by default and can be changed in Settings → Data & updates.
 * The installer is now named `KDS-Lab-Desk-Setup.exe` (hyphens): GitHub turns spaces in asset names into dots, which would break the file name in `latest.yml`. The shortcut is still called "KDS Lab Desk". This changes the name given in CLAUDE.md on purpose.
 * Publishing stays manual (no token on the PC): see `docs/RELEASING.md`.
+
+## In-house vs sent-out tests, Overview charts, WhatsApp gateway, memory
+* Thyroid (T3/T4/TSH), Vitamin D and B12 are done in the lab by default (with first-draft ranges for the doctor to review). Settings → Test master has a per-test switch "Done in this lab / Sent to another lab" (affects new visits only). Older databases are upgraded automatically at start (`upgradeMaster`), keeping the price.
+* Reports → Overview: charts are plain SVG/HTML (no chart library, so no extra RAM). One hue for money, teal for cash, hover tooltips, comparison with the previous period.
+* WhatsApp: a web link cannot attach a file. Options: WhatsApp Web (default), Desktop app, or **Evolution API** (self-hosted gateway, sends the PDF by itself; if it fails the app falls back to WhatsApp Web). Evolution's unofficial mode can get a number banned by WhatsApp; use a spare lab number or its official Cloud API mode.
+* Memory/CPU: hardware acceleration off, renderer heap capped at 192 MB, PDF windows destroyed after use. Measured: ≈85–135 MB private memory, back to ≈90 MB after 15 PDFs in 2.5 s; idle CPU ≈ 0.
