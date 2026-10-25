@@ -1,0 +1,8 @@
+node_modules/
+dist/
+release/
+out/
+*.db
+*.db-*
+data/
+docs/reference/

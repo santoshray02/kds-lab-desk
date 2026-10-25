@@ -1,0 +1,336 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>img{max-width:100%}[hidden]{display:none!important}body{margin:0}</style></head><body>
+<title>KDS Lab Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Devanagari:wght@500&display=swap">
+<style>
+/* Layout: one reading column (~760px) with wider bands for the screen mock-ups; colours borrowed from H&E slide stain */
+:root{
+  --paper:#f7f8fb; --card:#ffffff; --ink:#1c2033; --muted:#5d6378; --line:#dfe2ec;
+  --hema:#3a3a8c;      /* haematoxylin violet-blue: primary accent */
+  --hema-soft:#e8e8f6;
+  --eosin:#c2185b;     /* eosin pink: HIGH flags, warnings */
+  --eosin-soft:#fbe6ee;
+  --low:#1565c0; --low-soft:#e3eefb;
+  --ok:#2e7d4f; --ok-soft:#e3f3ea;
+  --wa:#1f8f4e;
+  --display:"Archivo",system-ui,sans-serif;
+  --body:"Source Sans 3",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  --hi:"Noto Sans Devanagari","Source Sans 3",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#12131c; --card:#1b1d29; --ink:#e7e8f0; --muted:#a0a5b8; --line:#2d3042;
+  --hema:#a9a9f5; --hema-soft:#26274a; --eosin:#f27aa6; --eosin-soft:#3a1d2a;
+  --low:#7fb4f5; --low-soft:#1b2a40; --ok:#6fcf97; --ok-soft:#173327; --wa:#4cc67f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#12131c; --card:#1b1d29; --ink:#e7e8f0; --muted:#a0a5b8; --line:#2d3042;
+  --hema:#a9a9f5; --hema-soft:#26274a; --eosin:#f27aa6; --eosin-soft:#3a1d2a;
+  --low:#7fb4f5; --low-soft:#1b2a40; --ok:#6fcf97; --ok-soft:#173327; --wa:#4cc67f; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:17px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:40px 80px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:56px}
+.wide{max-width:1080px;margin:0 auto;width:100%}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(34px,6vw,52px);font-weight:800;letter-spacing:-.01em}
+h2{font-size:28px;font-weight:700}
+h3{font-size:19px;font-weight:700}
+p{margin:0}
+.eyebrow{font:600 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--hema)}
+.lede{font-size:20px;color:var(--muted);max-width:62ch}
+section{display:flex;flex-direction:column;gap:18px}
+.muted{color:var(--muted)}
+.hi{font-family:var(--hi);font-weight:500}
+ul.clean{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+code,.mono{font-family:var(--mono);font-size:.88em}
+
+/* three-step strip */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.step b{font:700 13px var(--mono);color:var(--hema)}
+.step h3{font-size:18px}
+.step p{font-size:15px;color:var(--muted)}
+@media (max-width:640px){.steps{grid-template-columns:1fr}}
+
+/* app mock-ups */
+.screens{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.win{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px -18px rgba(30,30,90,.35);display:flex;flex-direction:column;min-width:0}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--hema);color:#fff;font:600 13px var(--display)}
+:root[data-theme="dark"] .bar{color:#12131c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .bar{color:#12131c}}
+.dot{display:inline-flex;align-items:center;gap:6px;font:500 11px var(--mono)}
+.dot::before{content:"";width:8px;height:8px;border-radius:50%;background:#7CE3A4}
+.pane{padding:16px;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.cap{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:4px}
+.input{border:1px solid var(--line);border-radius:7px;padding:8px 10px;background:var(--paper);font-size:15px;min-height:38px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.input .sug{font-size:12px;color:var(--muted)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:13px;background:var(--paper)}
+.chip.on{background:var(--hema);border-color:var(--hema);color:var(--card);font-weight:600}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:9px;padding:12px;font:700 15px var(--display);background:var(--hema);color:var(--card);border:0}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.wa{background:var(--wa);color:var(--card)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+table.res{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+table.res td,table.res th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.res th{font:600 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+table.res td.v{font-family:var(--mono);font-weight:600}
+table.res td.r{color:var(--muted);font-size:12px;white-space:nowrap}
+.val{display:inline-block;min-width:58px;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper)}
+.val.auto{border-style:dashed;color:var(--muted)}
+.flag{font:700 11px var(--mono);padding:1px 5px;border-radius:4px;margin-left:4px}
+.flag.H{background:var(--eosin-soft);color:var(--eosin)}
+.flag.L{background:var(--low-soft);color:var(--low)}
+.alert{border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.45;display:flex;gap:8px}
+.alert.warn{background:var(--eosin-soft);color:var(--ink);border-left:3px solid var(--eosin)}
+.alert.info{background:var(--hema-soft);border-left:3px solid var(--hema)}
+.alert.good{background:var(--ok-soft);border-left:3px solid var(--ok)}
+.alert b{white-space:nowrap}
+
+/* printed report mini */
+.paperA4{background:#fff;color:#111;border:1px solid #ccd;border-radius:4px;padding:14px 16px;font:11.5px/1.4 "Source Sans 3",sans-serif;display:flex;flex-direction:column;gap:8px}
+.paperA4 .lh{text-align:center;border-bottom:2px solid #3a3a8c;padding-bottom:6px}
+.paperA4 .lh b{font:800 17px "Archivo",sans-serif;color:#3a3a8c;letter-spacing:.04em}
+.paperA4 .pt{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:11px}
+.paperA4 table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.paperA4 td,.paperA4 th{padding:2px 3px;text-align:left;font-size:11px}
+.paperA4 th{border-bottom:1px solid #999;font-weight:700}
+.paperA4 .h{font-weight:800}
+.paperA4 .foot{display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #ccc;padding-top:6px;font-size:10px;gap:8px}
+.qr{width:44px;height:44px;flex:none;background:
+  conic-gradient(from 90deg at 30% 30%,#111 25%,#fff 0) 0 0/11px 11px,#fff;border:3px solid #111}
+.wamsg{background:var(--paper);border:1px solid var(--line);border-radius:10px 10px 10px 2px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+
+/* sync diagram */
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:stretch;gap:10px}
+.node{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.node h3{font-size:16px}
+.node p{font-size:14px;color:var(--muted)}
+.node.main{border:2px solid var(--hema)}
+.arrow{align-self:center;font:600 12px var(--mono);color:var(--hema);text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px}
+.arrow span{font-size:22px;line-height:1}
+@media (max-width:760px){.flow{grid-template-columns:1fr}.arrow span{transform:rotate(90deg)}}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.tbl table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+.tbl th,.tbl td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl th{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+.tbl td:first-child{font-weight:600;white-space:nowrap}
+
+.fix{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fix div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.fix .was{font-size:14px;color:var(--eosin);font-weight:600}
+.fix p{font-size:15px}
+@media (max-width:640px){.fix{grid-template-columns:1fr}}
+
+.phase{display:grid;grid-template-columns:120px 1fr;gap:14px;padding-block:14px;border-top:1px solid var(--line)}
+.phase:first-of-type{border-top:0}
+.phase .when{font:600 13px var(--mono);color:var(--hema)}
+.phase h3{margin-bottom:4px}
+@media (max-width:560px){.phase{grid-template-columns:1fr;gap:4px}}
+
+.q{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.q ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+.note{font-size:14px;color:var(--muted)}
+</style>
+
+<div class="wrap">
+
+<header style="display:flex;flex-direction:column;gap:14px">
+  <span class="eyebrow">Plan &amp; design · K.D.S. Pathology, Dalsingsarai</span>
+  <h1>KDS Lab Desk</h1>
+  <p class="lede">A simple reporting program for one lab PC. It works fully without internet, saves itself to the cloud whenever internet is available, and turns a report into a print or a WhatsApp message in one click.</p>
+</header>
+
+<section>
+  <span class="eyebrow">His whole day, in three screens</span>
+  <div class="steps">
+    <div class="step"><b>1 · Register</b><h3>New patient <span class="hi muted" style="font-size:14px">नया मरीज़</span></h3><p>Name, age, sex, phone, doctor. Tick the tests. Bill prints if needed.</p></div>
+    <div class="step"><b>2 · Enter results</b><h3>Type the numbers</h3><p>Only the measured values. Ranges, units, calculations and H/L flags are filled in for him.</p></div>
+    <div class="step"><b>3 · Finish</b><h3>Print or WhatsApp</h3><p>One button prints the report on his letterhead. One button sends it to the patient's WhatsApp.</p></div>
+  </div>
+  <p class="muted">No folders, no file names, no copying an old Word file. Every old report is searchable by name, phone or date.</p>
+</section>
+</div>
+
+<!-- SCREEN MOCK-UPS -->
+<section class="wide" style="margin-top:40px">
+  <div class="wrap" style="gap:8px;margin-bottom:12px"><span class="eyebrow">Screen designs (example data)</span><h2>What he will see</h2></div>
+  <div class="screens">
+
+    <div class="win">
+      <div class="bar"><span>1 · New patient</span><span class="dot">Saved · synced 2 min ago</span></div>
+      <div class="pane">
+        <div class="field"><span class="cap">Phone (finds the family)</span><div class="input"><span class="mono">98xxx 41207</span><span class="sug">3 people use this number</span></div></div>
+        <div class="field"><span class="cap">Who is the patient today?</span>
+          <div class="chips"><span class="chip on">Rekha Kumari · 34 F</span><span class="chip">Suresh Ray · 40 M</span><span class="chip">Baby Anu · 3 F</span><span class="chip">+ New person on this number</span></div>
+        </div>
+        <div class="field"><span class="cap">Name</span><div class="input"><span>Mrs. Rekha Kumari</span><span class="sug">Title sets sex</span></div></div>
+        <div class="row2">
+          <div class="field"><span class="cap">Age</span><div class="input">34 Years</div></div>
+          <div class="field"><span class="cap">Sex</span><div class="input">Female</div></div>
+        </div>
+        <div class="field"><span class="cap">Ref. by (type 2 letters)</span><div class="input"><span>Dr. A. Kumar</span><span class="sug">most used</span></div></div>
+        <div class="field"><span class="cap">Tests</span>
+          <div class="chips"><span class="chip on">CBC</span><span class="chip on">MP</span><span class="chip on">Widal</span><span class="chip">LFT</span><span class="chip">KFT</span><span class="chip">Lipid</span><span class="chip on">Sugar (R)</span><span class="chip">Urine R/E</span><span class="chip">HIV/HBsAg/HCV</span><span class="chip">Thyroid (sent out)</span></div>
+        </div>
+        <div class="alert info"><span>Total <b>₹ 650</b> · Paid ₹ 650 · Sample ID <span class="mono">2610-047</span></span></div>
+        <div class="btn">Save &amp; enter results →</div>
+      </div>
+    </div>
+
+    <div class="win">
+      <div class="bar"><span>2 · Results · CBC</span><span class="dot">Works offline</span></div>
+      <div class="pane">
+        <table class="res">
+          <tr><th>Test</th><th>Result</th><th>Unit</th><th>Range (F)</th></tr>
+          <tr><td>Haemoglobin</td><td class="v"><span class="val">9.4</span><span class="flag L">L</span></td><td>g/dL</td><td class="r">11.5 – 16.5</td></tr>
+          <tr><td>TLC</td><td class="v"><span class="val">13 200</span><span class="flag H">H</span></td><td>/cumm</td><td class="r">4 000 – 11 000</td></tr>
+          <tr><td>Neutrophils</td><td class="v"><span class="val">78</span><span class="flag H">H</span></td><td>%</td><td class="r">40 – 75</td></tr>
+          <tr><td>Lymphocytes</td><td class="v"><span class="val">16</span><span class="flag L">L</span></td><td>%</td><td class="r">20 – 40</td></tr>
+          <tr><td>Eos / Mono / Baso</td><td class="v"><span class="val">04 · 02 · 00</span></td><td>%</td><td class="r">DLC = 100 ✓</td></tr>
+          <tr><td>RBC</td><td class="v"><span class="val">3.90</span></td><td>mil/cumm</td><td class="r">3.8 – 4.8</td></tr>
+          <tr><td>PCV</td><td class="v"><span class="val">29.6</span><span class="flag L">L</span></td><td>%</td><td class="r">36 – 46</td></tr>
+          <tr><td>MCV</td><td class="v"><span class="val auto">75.9 auto</span><span class="flag L">L</span></td><td>fL</td><td class="r">83 – 101</td></tr>
+          <tr><td>MCH</td><td class="v"><span class="val auto">24.1 auto</span><span class="flag L">L</span></td><td>pg</td><td class="r">27 – 32</td></tr>
+          <tr><td>MCHC</td><td class="v"><span class="val auto">31.8 auto</span></td><td>g/dL</td><td class="r">31.5 – 34.5</td></tr>
+        </table>
+        <div class="alert warn"><b>Check:</b><span>these values are exactly the same as sample 2610-031 (a different patient, today 10:12). Please re-read the analyzer before saving.</span></div>
+        <div class="btns"><div class="btn ghost">← Back</div><div class="btn">Approve report</div></div>
+      </div>
+    </div>
+
+    <div class="win">
+      <div class="bar"><span>3 · Ready</span><span class="dot">Online copy ready</span></div>
+      <div class="pane">
+        <div class="paperA4" aria-label="Printed report preview">
+          <div class="lh"><b>K.D.S. PATHOLOGY</b><br>Computerised Janch Ghar · Sardarganj, Vidyapati Road, Dalsingsarai</div>
+          <div class="pt"><span>Name: <b>Mrs. Rekha Kumari</b></span><span>Sample ID: 2610-047</span><span>Age/Sex: 34 Y / F</span><span>Date: 25/10/2026</span><span>Ref. by: Dr. A. Kumar</span><span>Specimen: Blood</span></div>
+          <table><tr><th>HAEMATOLOGY</th><th>Result</th><th>Unit</th><th>Range</th></tr>
+            <tr><td>Haemoglobin</td><td class="h">9.4 L</td><td>g/dL</td><td>11.5–16.5</td></tr>
+            <tr><td>TLC</td><td class="h">13200 H</td><td>/cumm</td><td>4000–11000</td></tr>
+            <tr><td>Platelets</td><td>2.45</td><td>lakh/cumm</td><td>1.5–4.5</td></tr></table>
+          <div class="foot"><div class="qr" aria-hidden="true"></div><span>Scan to verify this report online<br>Not valid for medico-legal purpose</span><span style="text-align:right">Dr. Manoj Kumar, MBBS<br>Ram Vivek Kumar, DMLT</span></div>
+        </div>
+        <div class="btns"><div class="btn ghost">🖨 Print (A4)</div><div class="btn wa">Send on WhatsApp</div></div>
+        <div class="wamsg">Namaste Rekha ji, your K.D.S. Pathology report is ready.<br>View / download: <span class="mono">kds.lab/r/7QK2</span><br>PIN: last 4 digits of your phone.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px">
+
+<section>
+  <span class="eyebrow">Offline first, online when possible</span>
+  <h2>How the sync works</h2>
+  <div class="flow">
+    <div class="node main"><h3>Lab PC (main copy)</h3><p>All patients and reports are kept on the PC. Everything works with the internet off, the whole day if needed.</p></div>
+    <div class="arrow"><span>→</span>when internet is on</div>
+    <div class="node"><h3>Secure cloud (India region)</h3><p>Each new or changed report is copied up within a minute. Encrypted. Keeps a full history.</p></div>
+    <div class="arrow"><span>→</span>read only</div>
+    <div class="node"><h3>Phone, patient, doctor</h3><p>He checks the day on his phone. Patients open their PDF from a link. Doctors can see reports they referred.</p></div>
+  </div>
+  <ul class="clean">
+    <li><b>Nothing waits for the internet.</b> Saving, printing and searching always happen on the PC. Changes queue up and upload by themselves when the connection returns.</li>
+    <li><b>One place makes reports.</b> Only the lab PC creates and edits reports, so two copies can never disagree. The phone is for viewing and sharing.</li>
+    <li><b>Three backups without thinking:</b> the cloud copy, an automatic nightly copy on the PC, and a weekly reminder to plug in a pen drive (one click).</li>
+    <li><b>New PC or hard-disk failure:</b> install, sign in, and everything comes back from the cloud.</li>
+  </ul>
+</section>
+
+<section>
+  <span class="eyebrow">WhatsApp, in three levels</span>
+  <h2>Sharing reports</h2>
+  <div class="tbl"><table>
+    <tr><th>Level</th><th>What he does</th><th>Needs</th></tr>
+    <tr><td>A · Works offline</td><td>Click <i>Send on WhatsApp</i>. The patient's chat opens in WhatsApp Desktop and the PDF is already copied, so he presses Ctrl+V and Enter.</td><td>WhatsApp Desktop on the PC. No fee.</td></tr>
+    <tr><td>B · Link (recommended)</td><td>Click <i>Send on WhatsApp</i>, then Enter. The message carries a short link and PIN, so nothing needs attaching.</td><td>Cloud sync turned on.</td></tr>
+    <tr><td>C · Fully automatic</td><td>Reports go out by themselves the moment he approves them, from the lab's own business number.</td><td>WhatsApp Business API (Meta verification, small per-message fee).</td></tr>
+  </table></div>
+  <p class="note">The QR code on every printed report opens the same online copy, so a patient or doctor can check that a report is genuine.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Built from what we found in his 1,441 old reports</span>
+  <h2>What the software fixes</h2>
+  <div class="fix">
+    <div><span class="was">Found: 131 reports print MCH “27 – 321”; ranges differ between files</span><p>One master list of tests, units and ranges (male, female, child). Set once, used everywhere. Only he can change it.</p></div>
+    <div><span class="was">Found: MCV/MCH/MCHC wrong in 150 of 338 CBCs</span><p>Calculated values are worked out from Hb, PCV and RBC. He can still enter analyzer values and gets a warning if they don't match.</p></div>
+    <div><span class="was">Found: 29 sets of identical results under different names</span><p>Every report starts with empty boxes. Saving is paused if the values match another patient's report.</p></div>
+    <div><span class="was">Found: no abnormal value ever marked</span><p>Values outside the range print bold with H or L. Very dangerous values (e.g. Hb below 7) show a red warning on screen.</p></div>
+    <div><span class="was">Found: “MR. … / FEMALE” on 20 reports</span><p>Choosing Mr / Mrs / Miss fills in the sex, and the right sex-specific ranges follow.</p></div>
+    <div><span class="was">Found: Thyrocare reports kept as edited Word files</span><p>Sent-out tests are logged as “sent to Thyrocare” and their original PDF is attached as received. The software never produces another lab's report.</p></div>
+  </div>
+  <p class="note">Every approved report is locked. A correction makes a new version and keeps the old one, with the time it was changed.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Less work every day</span>
+  <h2>What runs on its own</h2>
+  <ul class="clean">
+    <li>Typing a phone number lists every family member who uses it. He taps the right person (or adds a new one), and details fill in from that person's last visit. Their previous results show beside today's. A warning appears if the age or sex doesn't fit that person.</li>
+    <li>A patient without a phone can still be found by name and village.</li>
+    <li>Test panels (CBC, LFT, KFT, Lipid, Widal, MP, Dengue, Sugar, Urine, Serology…) set up from his current report formats.</li>
+    <li>Optional: CBC values read straight from the haematology analyzer by USB cable, if the model supports it.</li>
+    <li>Bill and receipt, today's cash total, pending payments.</li>
+    <li>Monthly list of patients sent by each doctor.</li>
+    <li>Pending list: tests registered but not yet reported, sent-out samples not yet back.</li>
+    <li>Screens in English or Hindi; reports print in English.</li>
+    <li>Updates install by themselves overnight. Nothing for him to configure.</li>
+    <li>His old Word reports are imported once, so patient history from past years is searchable from day one.</li>
+  </ul>
+</section>
+
+<section>
+  <span class="eyebrow">For whoever builds it</span>
+  <h2>Technical choices</h2>
+  <div class="tbl"><table>
+    <tr><th>Part</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Desktop app</td><td>Tauri (Windows installer), React screens</td><td>Small, fast on an old PC, desktop icon, auto-update built in.</td></tr>
+    <tr><td>Local data</td><td>SQLite database, one file</td><td>Very reliable, no server to run, easy to back up.</td></tr>
+    <tr><td>Patient identity</td><td>Patient ID per person; phone is a shared contact field (many patients → one number)</td><td>Families share one phone; the number groups a household and never identifies a single patient.</td></tr>
+    <tr><td>Reports</td><td>PDF generated from one HTML template</td><td>Identical layout on screen, printer and WhatsApp. A4 or Letter, letterhead or pre-printed paper.</td></tr>
+    <tr><td>Sync</td><td>Outbox queue → Supabase (Postgres + file storage, Mumbai region)</td><td>Single writer (the PC), so no conflicts; retries until it succeeds.</td></tr>
+    <tr><td>Report links</td><td>Short link + PIN, signed and expiring</td><td>Patients open their report without an account; strangers can't guess links.</td></tr>
+    <tr><td>Privacy</td><td>Encrypted at rest and in transit; patient consent line on the bill</td><td>Health data, covered by India's DPDP Act.</td></tr>
+  </table></div>
+  <p class="note">Running cost: cloud starts on a free tier and stays around a few hundred rupees a month at this lab's volume; a domain for short links is about ₹1,000 a year. WhatsApp Level C adds Meta's per-message charge.</p>
+</section>
+
+<section>
+  <span class="eyebrow">Roadmap</span>
+  <h2>Delivery in four steps</h2>
+  <div>
+    <div class="phase"><span class="when">Week 1–2</span><div><h3>Offline reporting</h3><p>Register, enter results, master test list, checks and flags, print on his letterhead, search. He starts using it next to Word.</p></div></div>
+    <div class="phase"><span class="when">Week 3</span><div><h3>WhatsApp + backups</h3><p>WhatsApp Level A, bills, nightly and pen-drive backups, import of old reports.</p></div></div>
+    <div class="phase"><span class="when">Week 4–5</span><div><h3>Cloud sync</h3><p>Sync, phone view, report links with PIN, QR verification, WhatsApp Level B. Word stops being needed.</p></div></div>
+    <div class="phase"><span class="when">Later</span><div><h3>Extras</h3><p>Analyzer connection, WhatsApp Level C, doctor view.</p></div></div>
+  </div>
+</section>
+
+<section>
+  <span class="eyebrow">Ready on day one</span>
+  <h2>Default settings</h2>
+  <p class="muted">The program starts with these choices, so nothing needs deciding before he begins. Each one can be changed later under <b>Settings</b>.</p>
+  <div class="tbl"><table>
+    <tr><th>Setting</th><th>Starts as</th><th>Can be changed to</th></tr>
+    <tr><td>Paper</td><td>Plain A4. The software prints the K.D.S. letterhead, signatures and footer itself.</td><td>Pre-printed letterhead (top and bottom left blank, height set in mm), Letter size, or a different header text or logo.</td></tr>
+    <tr><td>Analyzer</td><td>Values typed by hand.</td><td>Choose his analyzer model to read CBC values over a USB cable, where the model supports it.</td></tr>
+    <tr><td>Normal ranges</td><td>His current 2025–26 format with the errors corrected (e.g. MCH 27–32, SGPT/SGOT in U/L, protein in g/dL). Separate ranges for men, women and children.</td><td>Edit any range or unit, e.g. to match an analyzer kit's printed ranges. Changes apply to new reports only; old reports stay as printed.</td></tr>
+    <tr><td>Phone number</td><td>Optional. With a number, the WhatsApp button is active. Without one, he prints only.</td><td>Make the phone number required, and set a default message text in Hindi or English.</td></tr>
+    <tr><td>Prices &amp; bills</td><td>Starter price list (example rates, to be replaced with his): CBC ₹200, Sugar ₹50, LFT ₹400, KFT ₹400, Lipid ₹400, Widal ₹150, MP ₹100, Urine R/E ₹100. Total shown on screen; no bill printed.</td><td>His own prices, discounts per doctor, and a printed receipt (half A4 or 80 mm thermal printer).</td></tr>
+    <tr><td>Users</td><td>One shared account, no password for daily work. A 4-digit PIN protects Settings, the range list and corrections to approved reports.</td><td>Separate logins for the doctor and technician, with only the doctor able to approve reports.</td></tr>
+  </table></div>
+</section>
+
+</div>
+
+</body></html>
