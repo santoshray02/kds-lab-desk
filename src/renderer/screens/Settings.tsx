@@ -115,6 +115,10 @@ function General({ pin }: { pin?: string }) {
             <label className="f">{t('Blank space at bottom (mm)')}<input className="input num" type="number" min={0} max={80} value={s.letterheadBottomMm} onChange={(e) => set('letterheadBottomMm', Number(e.target.value))} /></label>
           </div>
         )}
+        <label className="f" style={{ maxWidth: 420 }}>{t('Analyzer')}
+          <select className="input" value="manual" onChange={() => undefined} data-testid="analyzer"><option value="manual">{t('Values typed by hand')}</option></select>
+          <span style={{ fontWeight: 400 }}>{t('Reading values from the analyzer over USB can be added later for supported models.')}</span>
+        </label>
         <label className="checkrow"><input type="checkbox" checked={s.silentPrint} onChange={(e) => set('silentPrint', e.target.checked)} /> {t('Print straight to the printer without the print window')}</label>
       </div>
 

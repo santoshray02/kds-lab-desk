@@ -1,6 +1,6 @@
 /**
  * Report PIN hashing, shared by the lab PC (uploads the hash) and the cloud Edge Function (checks it).
- * The cloud/functions/get-report/hash.ts copy must stay identical; tests/cloud.test.ts compares them.
+ * The cloud/supabase/functions/get-report/hash.ts copy must stay identical; tests/cloud.test.ts compares them.
  * Only Web Crypto is used so it runs in Node, Electron and Deno.
  */
 export async function hashPin(code: string, pin: string, salt: string): Promise<string> {

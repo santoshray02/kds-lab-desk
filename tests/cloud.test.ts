@@ -12,8 +12,8 @@ import { setFetch, setPdfProvider, syncNow, syncStatus, testConnection } from '.
 import { reportLink, qrTarget } from '../src/main/reportsvc'
 import { buildWaPlan } from '../src/main/whatsapp'
 import { hashPin } from '../src/shared/pinhash'
-import { hashPin as fnHash } from '../cloud/functions/get-report/hash'
-import { decide, publicStatus, MAX_FAILS, type ReportRecord } from '../cloud/functions/get-report/logic'
+import { hashPin as fnHash } from '../cloud/supabase/functions/get-report/hash'
+import { decide, publicStatus, MAX_FAILS, type ReportRecord } from '../cloud/supabase/functions/get-report/logic'
 import { startMockCloud, type MockCloud } from '../cloud/mock-server/server'
 
 let db: Db

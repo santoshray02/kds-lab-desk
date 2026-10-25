@@ -92,6 +92,12 @@ describe('registration', () => {
     setSettings(db, { phoneRequired: true })
     expect(() => register('No Phone Again', '', ['CBC'])).toThrow(/Phone/)
   })
+  it('refuses a missing or impossible age', () => {
+    expect(() => register('No Age', '', ['CBC'], { age: { years: 0, months: 0, days: 0 } })).toThrow(/age/i)
+    expect(() => register('Odd Age', '', ['CBC'], { age: { years: 200, months: 0, days: 0 } })).toThrow(/age/i)
+    expect(() => register('Neg Age', '', ['CBC'], { age: { years: -1, months: 0, days: 0 } })).toThrow(/age/i)
+    expect(register('Baby Age', '', ['CBC'], { age: { years: 0, months: 0, days: 12 } }).visitId).toBeGreaterThan(0)
+  })
   it('rejects a bad phone and an empty test list', () => {
     expect(() => register('Bad Phone', '12345', ['CBC'])).toThrow(/10 digits/)
     expect(() => register('No Tests', '9800000003', [])).toThrow(/test/)

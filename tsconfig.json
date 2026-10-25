@@ -14,5 +14,5 @@
     "types": ["node"],
     "paths": { "@shared/*": ["./src/shared/*"] }
   },
-  "include": ["src", "tests", "e2e", "cloud/mock-server", "cloud/functions/get-report/hash.ts", "cloud/functions/get-report/logic.ts", "electron.vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "tests", "e2e", "cloud/mock-server", "cloud/supabase/functions/get-report/hash.ts", "cloud/supabase/functions/get-report/logic.ts", "electron.vite.config.ts", "vitest.config.ts"]
 }

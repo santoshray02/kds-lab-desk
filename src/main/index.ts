@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
 import { join } from 'node:path'
 import { mkdirSync } from 'node:fs'
-import { openDb } from './db'
+import { audit, openDb } from './db'
 import { seedMaster } from './master'
 import { makeHandlers, runNightlyIfDue, type Ctx } from './handlers'
 import { AppError } from './results'
@@ -57,6 +57,11 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null)
   const db = openDb(join(dataDir, 'kds.db'))
   seedMaster(db)
+  // Lost PIN: start the program once with --reset-pin (see docs/USER-GUIDE.md). Data is untouched; a new PIN can be set in Settings.
+  if (process.argv.includes('--reset-pin')) {
+    db.run("DELETE FROM settings WHERE key IN ('_pin_owner', '_pin_doctor')")
+    audit(db, 'pin.reset', 'settings', null, 'reset from the command line')
+  }
   if (process.env.KDS_DEMO === '1' && !db.get('SELECT 1 AS x FROM visits LIMIT 1')) seedDemo(db)
 
   const ctx: Ctx = { db, dataDir, win: () => win, version: app.getVersion() }

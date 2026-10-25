@@ -28,6 +28,9 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
   const settings = getSettings(db)
   if (settings.phoneRequired && normalizePhone(input.patient.phone).length !== 10) throw new Error('Phone number is required (Settings)')
   if (!input.panelCodes.length) throw new Error('Tick at least one test')
+  const a = input.age
+  if (![a.years, a.months, a.days].every((n) => Number.isInteger(n) && n >= 0) || a.years > 120 || a.months > 1200 || a.days > 36500) throw new Error('The age is not valid')
+  if (a.years + a.months + a.days === 0) throw new Error('Enter the age (years, months or days)')
   const warnings = titleChecks(input.patient.title, input.patient.sex, input.age)
   const doctor = input.doctor.trim() || 'Self'
 

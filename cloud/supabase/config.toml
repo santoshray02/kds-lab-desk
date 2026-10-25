@@ -1,0 +1,4 @@
+project_id = "kds-lab"
+
+[functions.get-report]
+verify_jwt = false

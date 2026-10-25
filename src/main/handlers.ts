@@ -141,7 +141,11 @@ export function makeHandlers(ctx: Ctx) {
         if (r.canceled || !r.filePaths[0]) return null
         return attachSentOutPdf(db, visitTestId, r.filePaths[0], ctx.dataDir)
       },
-      openAttachment: (path: string) => shell.openPath(path)
+      openAttachment: (path: string) => {
+        // only files this program stored itself
+        if (!path.startsWith(join(ctx.dataDir, 'attachments'))) throw new AppError('INVALID', 'Not an attachment of this program')
+        return shell.openPath(path)
+      }
     },
 
     results: {

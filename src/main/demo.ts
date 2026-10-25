@@ -35,7 +35,7 @@ const PEOPLE: DemoPerson[] = [
   { name: 'Suresh Ray', title: 'Mr', sex: 'M', age: 40, phone: '9800041207', village: 'Dalsingsarai', doctor: 'Dr. A. Kumar', panels: ['LFT', 'LIPID'], daysAgo: 0, paid: 400 },
   { name: 'Anu', title: 'Baby', sex: 'F', age: 3, phone: '9800041207', village: 'Dalsingsarai', doctor: 'Dr. S. Prasad', panels: ['CBC', 'ESR'], daysAgo: 0, paid: 260 },
   { name: 'Mohan Lal Demo', title: 'Mr', sex: 'M', age: 52, phone: '9800012345', village: 'Sardarganj', doctor: 'Self', panels: ['KFT', 'RBS', 'URINE'], daysAgo: 1, paid: 300 },
-  { name: 'Geeta Devi Demo', title: 'Mrs', sex: 'F', age: 45, phone: '9800023456', village: 'Vidyapati Nagar', doctor: 'Dr. S. Prasad', panels: ['CBC', 'LFT', 'HIV', 'HBSAG'], daysAgo: 1, paid: 1000 },
+  { name: 'Gita Sample', title: 'Mrs', sex: 'F', age: 45, phone: '9800023456', village: 'Vidyapati Nagar', doctor: 'Dr. S. Prasad', panels: ['CBC', 'LFT', 'HIV', 'HBSAG'], daysAgo: 1, paid: 1000 },
   { name: 'Ravi Kumar Demo', title: 'Mr', sex: 'M', age: 28, phone: '', village: 'Mohiuddinnagar', doctor: 'Dr. A. Kumar', panels: ['CBC', 'ABO', 'FBS'], daysAgo: 2, paid: 330 },
   { name: 'Sita Kumari Demo', title: 'Miss', sex: 'F', age: 19, phone: '9800034567', village: 'Dalsingsarai', doctor: 'Dr. M. Jha', panels: ['CBC', 'ESR', 'UPT'], daysAgo: 3, abnormal: true, paid: 360 },
   { name: 'Bablu Demo', title: 'Master', sex: 'M', age: 7, phone: '9800045678', village: 'Sardarganj', doctor: 'Dr. S. Prasad', panels: ['CBC', 'WIDAL', 'MPC'], daysAgo: 4, paid: 450 },
