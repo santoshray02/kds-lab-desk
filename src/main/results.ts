@@ -83,7 +83,7 @@ export function findDuplicates(db: Db, reportId: number): DuplicateHit[] {
     `SELECT s.panel_code, v.sample_id, p.name, v.visit_date
      FROM result_signatures s JOIN result_signatures mine ON mine.signature = s.signature AND mine.report_id = ?
        JOIN reports r ON r.id = s.report_id JOIN visits v ON v.id = r.visit_id JOIN patients p ON p.id = v.patient_id
-     WHERE s.report_id != ? AND v.patient_id != ? AND r.is_current = 1 AND v.cancelled = 0
+     WHERE s.report_id != ? AND v.patient_id != ? AND r.is_current = 1 AND r.status IN ('approved','imported') AND v.cancelled = 0
      ORDER BY v.visit_date DESC LIMIT 10`,
     reportId, reportId, pid
   ).map((r) => ({ panelCode: r.panel_code, sampleId: r.sample_id, patientName: r.name, date: r.visit_date }))

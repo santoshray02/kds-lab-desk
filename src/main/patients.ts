@@ -114,6 +114,23 @@ export function savePatient(db: Db, p: PatientInput, source: 'app' | 'imported' 
   return id
 }
 
+/** Correct a patient's details. Sex cannot change once a report was issued (its ranges and flags depend on it). */
+export function updatePatient(db: Db, p: PatientInput): number {
+  if (!p.id) throw new Error('Unknown patient')
+  const old = getPatient(db, p.id)
+  if (!old) throw new Error('Unknown patient')
+  const issued = db.get('SELECT 1 AS x FROM reports r JOIN visits v ON v.id = r.visit_id WHERE v.patient_id = ? AND r.status = ?', p.id, 'approved')
+  if (issued && p.sex !== old.sex) throw new Error('The sex cannot be changed after a report was issued. Make a correction to the report instead.')
+  savePatient(db, { ...p, phone: p.phone ?? old.phone })
+  // printed copies must show the corrected name: drop cached PDFs and tell the cloud
+  for (const r of db.all<{ id: number }>('SELECT r.id FROM reports r JOIN visits v ON v.id = r.visit_id WHERE v.patient_id = ?', p.id)) {
+    db.run('UPDATE reports SET pdf_path = NULL WHERE id = ?', r.id)
+    if (db.get('SELECT 1 AS x FROM reports WHERE id = ? AND status = ?', r.id, 'approved')) enqueue(db, 'report', r.id)
+  }
+  audit(db, 'patient.update', 'patients', p.id, `${old.name} -> ${p.name}`)
+  return 1
+}
+
 export function suggestDoctors(db: Db, prefix: string, limit = 8): string[] {
   const t = prefix.trim()
   const rows = db.all<{ name: string }>(

@@ -108,6 +108,9 @@ export function pruneBackups(dir: string, keep: number, prefix = 'KDS-backup'): 
 export function restoreBackup(backupPath: string, dataDir: string, now = new Date()): string {
   const v = validateBackup(backupPath)
   if (!v.ok) throw new Error(v.error)
+  // copy first, so a full disk or a pulled pen drive fails before anything is moved
+  const staged = join(dataDir, 'kds.db.restoring')
+  cpSync(join(backupPath, 'kds.db'), staged)
   const safe = join(dataDir, `before-restore-${stamp(now)}`)
   mkdirSync(safe, { recursive: true })
   for (const f of ['kds.db', 'kds.db-wal', 'kds.db-shm']) {
@@ -115,8 +118,20 @@ export function restoreBackup(backupPath: string, dataDir: string, now = new Dat
     if (existsSync(p)) renameSync(p, join(safe, f))
   }
   if (existsSync(join(dataDir, 'attachments'))) renameSync(join(dataDir, 'attachments'), join(safe, 'attachments'))
-  cpSync(join(backupPath, 'kds.db'), join(dataDir, 'kds.db'))
-  if (existsSync(join(backupPath, 'attachments'))) cpSync(join(backupPath, 'attachments'), join(dataDir, 'attachments'), { recursive: true })
+  try {
+    renameSync(staged, join(dataDir, 'kds.db'))
+    if (existsSync(join(backupPath, 'attachments'))) cpSync(join(backupPath, 'attachments'), join(dataDir, 'attachments'), { recursive: true })
+  } catch (e) {
+    // put the old data back
+    for (const f of ['kds.db', 'kds.db-wal', 'kds.db-shm', 'attachments']) {
+      const kept = join(safe, f)
+      if (existsSync(kept)) {
+        rmSync(join(dataDir, f), { recursive: true, force: true })
+        renameSync(kept, join(dataDir, f))
+      }
+    }
+    throw e
+  }
   return safe
 }
 

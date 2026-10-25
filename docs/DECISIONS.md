@@ -48,10 +48,10 @@ with the reason, so the doctor or a helper can change it later.
 
 19. **Auto-calculated:** MCV = PCV/RBC×10, MCH = Hb/RBC×10, MCHC = Hb/PCV×100, globulin, A/G ratio, VLDL = TG/5, LDL (Friedewald, left blank when TG > 400 mg/dL), indirect bilirubin, TC/HDL and LDL/HDL ratios.
     If a value is typed (from an analyzer) instead, it is kept and a warning shows when it is more than **10 %** away from the calculated one.
-20. **DLC** must total 100 with the five main cells plus band forms. Off by exactly 1 (rounding on the analyzer) is a warning; more than that blocks approval. All five cells must be filled once any is typed.
+20. **DLC** must total exactly 100 (five main cells plus band forms); any other total blocks approval, because a review found that allowing 99/101 let wrong reports through. All five cells must be filled once any is typed.
 21. **Implausible values are rejected** with fixed per-test limits (e.g. Hb outside 1–25 g/dL, so 105 is refused). They stay in the box (red) so the typist can fix them, but approval is blocked.
 22. **Critical values** (Hb < 7, platelets < 0.5 lakh, glucose < 50 or > 400, K < 2.8 or > 6.2, plus TLC, Na, creatinine, calcium limits I added) show a red banner and a `!!` mark; they ask for acknowledgement in the approve dialog but do not block.
-23. **Duplicate guard:** for every panel with at least three typed numeric values, a signature of those numbers is stored. If another patient's current report (including imported old reports) has the same signature, approval is blocked until a reason of at least three characters is typed; the reason is stored with the report.
+23. **Duplicate guard:** for every panel with at least three typed numeric values, a signature of those numbers is stored. If another patient's current report (approved or imported only, never someone's unfinished draft) has the same signature; imported reports are signed with the same rule as live ones, so auto-calculated indices are ignored on both sides, approval is blocked until a reason of at least three characters is typed; the reason is stored with the report.
     The same patient repeating a test is not a duplicate. Auto-calculated values and qualitative results do not count.
 24. **Title and sex:** Mr/Master set Male, Mrs/Miss set Female, Baby leaves the choice open. Mismatches, "Master" over 17 and "Mrs" under 14 give a yellow warning that needs a second click on *Save*.
 25. **Sample ID** `YYMM-NNN`, counted per month (`2610-047`). Imported old reports get `I` + `YYMM-NNN` so the two never collide.

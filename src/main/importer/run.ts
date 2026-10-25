@@ -107,7 +107,7 @@ function importVisit(db: Db, v: ParsedVisit, file: string, master: PanelDef[]): 
       panelsSeen.add(key)
       db.run('INSERT INTO visit_tests(visit_id, panel_id, panel_code, name, price, sent_out) VALUES(?,?,?,?,0,0)', visitId, info?.panel.id ?? null, info?.panel.code ?? 'IMPORTED', info?.panel.name ?? r.panel)
     }
-    if (r.code) values[r.code] = { value: r.value }
+    if (r.code) values[r.code] = { value: r.value, auto: !!info?.param.calc }
   })
   for (const s of allSignatures(master, values)) {
     db.run('INSERT INTO result_signatures(report_id, panel_code, signature) VALUES(?,?,?)', reportId, s.panelCode, s.signature)

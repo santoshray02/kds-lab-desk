@@ -62,11 +62,11 @@ describe('DLC check', () => {
   it('includes band forms in the total', () => {
     expect(dlcIssues(v({ neut: '58', lymph: '30', eos: '4', mono: '5', baso: '1', band: '2' }))).toEqual([])
   })
-  it('errors when far from 100, warns when off by one', () => {
+  it('errors whenever the total is not exactly 100', () => {
     expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '5' }))[0].severity).toBe('error')
-    expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '0' }))[0].severity).toBe('warn')
+    expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '0' }))[0].severity).toBe('error')
     expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '0', band: '1' }))).toEqual([])
-    expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '1', band: '1' }))[0].severity).toBe('warn')
+    expect(dlcIssues(v({ neut: '60', lymph: '30', eos: '4', mono: '5', baso: '1', band: '1' }))[0].severity).toBe('error')
   })
   it('requires all five counts once any is typed', () => {
     expect(dlcIssues(v({ neut: '60' }))[0].code).toBe('dlc_incomplete')

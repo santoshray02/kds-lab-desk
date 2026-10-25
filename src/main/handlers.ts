@@ -1,6 +1,6 @@
 import { app, BrowserWindow, clipboard, dialog, shell } from 'electron'
 import { existsSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import type { Settings } from '../shared/settings'
 import type { Sex } from '../shared/types'
 import type { AgeInput } from '../shared/types'
@@ -9,7 +9,7 @@ import { audit, type Db } from './db'
 import { htmlToPdf, listPrinters, printHtml } from './electronBits'
 import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, type ParamEdit } from './master'
 import { dayReport, doctorMonthly, duesReport, pendingReport } from './owner'
-import { getPatient, peopleByPhone, searchPeople, suggestDoctors, type PatientInput } from './patients'
+import { updatePatient, getPatient, peopleByPhone, searchPeople, suggestDoctors, type PatientInput } from './patients'
 import { ensurePdf, reportHtml, reportLink } from './reportsvc'
 import {
   AppError, approveReport, discardCorrection, getEntry, listVersions, saveDraft, startCorrection
@@ -120,7 +120,7 @@ export function makeHandlers(ctx: Ctx) {
       get: (id: number) => getPatient(db, id),
       update: (p: PatientInput, pin?: string) => {
         requirePin(db, pin)
-        return db.run('UPDATE patients SET name = ?, title = ?, sex = ?, village = ?, phone = ? WHERE id = ?', p.name, p.title, p.sex as Sex, p.village ?? '', p.phone.replace(/\D/g, '').slice(-10), p.id!).changes
+        return updatePatient(db, p)
       }
     },
 
@@ -129,7 +129,7 @@ export function makeHandlers(ctx: Ctx) {
       list: (f: VisitFilter) => listVisits(db, f),
       get: (id: number) => getVisit(db, id),
       addPayment: (visitId: number, amount: number, note?: string) => addPayment(db, visitId, amount, note),
-      updateBill: (visitId: number, total: number, discount: number) => updateBill(db, visitId, total, discount),
+      updateBill: (visitId: number, total: number, discount: number, pin?: string) => { requirePin(db, pin); updateBill(db, visitId, total, discount) },
       cancel: (visitId: number, reason: string, pin?: string) => {
         requirePin(db, pin)
         cancelVisit(db, visitId, reason)
@@ -143,7 +143,7 @@ export function makeHandlers(ctx: Ctx) {
       },
       openAttachment: (path: string) => {
         // only files this program stored itself
-        if (!path.startsWith(join(ctx.dataDir, 'attachments'))) throw new AppError('INVALID', 'Not an attachment of this program')
+        if (!resolve(path).startsWith(join(resolve(ctx.dataDir), 'attachments') + sep)) throw new AppError('INVALID', 'Not an attachment of this program')
         return shell.openPath(path)
       }
     },
@@ -157,7 +157,7 @@ export function makeHandlers(ctx: Ctx) {
         return r
       },
       startCorrection: (visitId: number, reason: string, pin?: string) => startCorrection(db, visitId, { reason, pin }),
-      discardCorrection: (reportId: number) => discardCorrection(db, reportId),
+      discardCorrection: (reportId: number, pin?: string) => { requirePin(db, pin); discardCorrection(db, reportId) },
       versions: (visitId: number) => listVersions(db, visitId)
     },
 

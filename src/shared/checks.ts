@@ -90,11 +90,11 @@ export function dlcIssues(values: ResultMap): Issue[] {
   if (missing.length) {
     return [{ severity: 'error', code: 'dlc_incomplete', message: 'DLC: fill all five differential counts (type 0 where none).' }]
   }
-  const sum = all.reduce((s, c) => s + (parseNum(values[c]?.value) ?? 0), 0)
+  const sum = Math.round(all.reduce((s, c) => s + (parseNum(values[c]?.value) ?? 0), 0) * 100) / 100
   const diff = Math.abs(sum - 100)
   if (diff === 0) return []
   return [{
-    severity: diff <= 1 ? 'warn' : 'error', code: 'dlc_sum',
+    severity: 'error', code: 'dlc_sum',
     message: `DLC adds up to ${sum}, it must total 100.`
   }]
 }
