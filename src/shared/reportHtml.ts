@@ -53,7 +53,7 @@ export interface ReportData {
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-const LOGO = `<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect width="48" height="48" rx="11" fill="#2b3a8f"/><path d="M24 7c-4.6 6.2-9 11-9 16.4a9 9 0 0018 0C33 18 28.600 13.200 24 7z" fill="#fff" opacity=".95"/><path d="M19.500 24.500a4.500 4.500 0 004 4.400" stroke="#2b3a8f" stroke-width="2" fill="none" stroke-linecap="round"/><text x="24" y="43" font-family="Segoe UI,Arial" font-size="8.500" font-weight="800" fill="#fff" text-anchor="middle" letter-spacing="1">KDS</text></svg>`
+const LOGO = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="kdsg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b3a8f"/><stop offset="1" stop-color="#127c96"/></linearGradient></defs><rect width="64" height="64" rx="15" fill="url(#kdsg)"/><path d="M32 9C32 9 16 27 16 38a16 16 0 0 0 32 0C48 27 32 9 32 9Z" fill="#fff"/><rect x="25" y="35.500" width="14" height="5" rx="2" fill="#2b3a8f"/><rect x="29.500" y="31" width="5" height="14" rx="2" fill="#2b3a8f"/><circle cx="49" cy="15" r="4.500" fill="#f0527f"/></svg>`
 
 /** Letterhead: logo, name, tagline on the left; address and contact details on the right. */
 export function letterheadBlock(lab: Settings['lab']): string {
