@@ -22,7 +22,7 @@ import {
 import { buildWaPlan, copyFileToClipboard } from './whatsapp'
 import { seedDemo, clearDemo } from './demo'
 import { runImport, importLog, type ImportProgress } from './importer/run'
-import { syncStatus, syncNow, testConnection } from './sync'
+import { syncStatus, syncNow, testConnection, enqueueEverything, setPdfProvider } from './sync'
 
 export interface Ctx {
   db: Db
@@ -57,6 +57,7 @@ export function makeHandlers(ctx: Ctx) {
   const { db } = ctx
   const pdfWriter = (p: string, b: Buffer) => writeFileSync(p, b)
   const pdfOf = (reportId: number) => ensurePdf(db, ctx.dataDir, reportId, htmlToPdf, pdfWriter)
+  setPdfProvider(pdfOf)
 
   return {
     app: {
@@ -271,6 +272,7 @@ export function makeHandlers(ctx: Ctx) {
     sync: {
       status: () => syncStatus(db),
       now: () => syncNow(db, ctx.dataDir),
+      resendAll: () => enqueueEverything(db),
       test: (url: string, key: string) => testConnection(url, key)
     },
 

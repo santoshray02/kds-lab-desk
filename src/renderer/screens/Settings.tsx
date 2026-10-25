@@ -317,6 +317,7 @@ function Cloud({ pin }: { pin?: string }) {
           <button className="btn" onClick={async () => { if (await guard(api.settings.set({ cloud: c }, pin))) { await reloadSettings(); toast(t('Saved'), 'ok'); status.reload() } }} data-testid="cloud-save">{t('Save')}</button>
           <button className="btn ghost" onClick={async () => { const r = await guard(api.sync.test(c.url, c.key)) as { ok: boolean; message?: string } | undefined; if (r) toast(r.ok ? t('Connection works.') : `${t('Could not connect')}: ${r.message ?? ''}`, r.ok ? 'ok' : 'bad') }}>{t('Test connection')}</button>
           <button className="btn ghost" onClick={async () => { await guard(api.sync.now()); status.reload(); toast(t('Sync tried.'), 'ok') }}>{t('Sync now')}</button>
+          <button className="btn ghost" onClick={async () => { const n = await guard(api.sync.resendAll()); if (n !== undefined) { toast(`${n} · ${t('Queued for upload')}`, 'ok'); status.reload() } }}>{t('Send everything again')}</button>
         </div>
       </div>
       <div className="card">
