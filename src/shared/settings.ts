@@ -18,6 +18,8 @@ export interface Settings {
   phoneRequired: boolean
   waMessageEn: string
   waMessageHi: string
+  /** where "Send on WhatsApp" opens the chat */
+  waTarget: 'web' | 'app'
   analyzer: 'manual' | string
   silentPrint: boolean
   printerName: string
@@ -61,6 +63,7 @@ export const DEFAULT_SETTINGS: Settings = {
   phoneRequired: false,
   waMessageEn: 'Namaste {name}, your K.D.S. Pathology report ({sample}) is ready.',
   waMessageHi: 'नमस्ते {name} जी, आपकी K.D.S. Pathology की रिपोर्ट ({sample}) तैयार है।',
+  waTarget: 'web',
   analyzer: 'manual',
   silentPrint: false,
   printerName: '',

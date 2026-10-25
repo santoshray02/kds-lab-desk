@@ -196,12 +196,16 @@ export function makeHandlers(ctx: Ctx) {
             copied = false
           }
         }
-        let opened: 'app' | 'web' = 'app'
-        try {
-          await shell.openExternal(plan.appUrl)
-        } catch {
-          opened = 'web'
+        let opened: 'app' | 'web' = plan.target
+        if (plan.target === 'web') {
           await shell.openExternal(plan.webUrl)
+        } else {
+          try {
+            await shell.openExternal(plan.appUrl)
+          } catch {
+            opened = 'web'
+            await shell.openExternal(plan.webUrl)
+          }
         }
         audit(db, 'whatsapp.send', 'reports', reportId, `${plan.level}/${opened}`)
         return { level: plan.level, copied, opened, pdf }

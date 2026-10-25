@@ -10,6 +10,7 @@ export interface WaPlan {
   text: string
   appUrl: string
   webUrl: string
+  target: 'web' | 'app'
 }
 
 export function buildWaPlan(db: Db, reportId: number): WaPlan {
@@ -35,7 +36,7 @@ export function buildWaPlan(db: Db, reportId: number): WaPlan {
   }
   const phone = `91${row.phone}`
   const enc = encodeURIComponent(text)
-  return { level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://wa.me/${phone}?text=${enc}` }
+  return { level, phone, text, appUrl: `whatsapp://send?phone=${phone}&text=${enc}`, webUrl: `https://web.whatsapp.com/send?phone=${phone}&text=${enc}`, target: s.waTarget === 'app' ? 'app' : 'web' }
 }
 
 /** Put a file on the Windows clipboard as a file (CF_HDROP) so Ctrl+V in WhatsApp attaches it. */

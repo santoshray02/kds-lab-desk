@@ -72,7 +72,7 @@ function General({ pin }: { pin?: string }) {
   async function save() {
     const r = await guard(api.settings.set({
       lab: s.lab, paper: s.paper, letterhead: s.letterhead, letterheadTopMm: s.letterheadTopMm, letterheadBottomMm: s.letterheadBottomMm,
-      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, silentPrint: s.silentPrint, printerName: s.printerName,
+      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, silentPrint: s.silentPrint, printerName: s.printerName,
       penDriveReminderDays: s.penDriveReminderDays
     }, pin))
     if (r) { await reloadSettings(); toast(t('Settings saved'), 'ok') }
@@ -125,6 +125,12 @@ function General({ pin }: { pin?: string }) {
       <div className="card col">
         <h2>{t('Patients and WhatsApp')}</h2>
         <label className="checkrow"><input type="checkbox" checked={s.phoneRequired} onChange={(e) => set('phoneRequired', e.target.checked)} data-testid="phone-required" /> {t('Phone number is required for every patient')}</label>
+        <label className="f" style={{ maxWidth: 420 }}>{t('Open WhatsApp in')}
+          <select className="input" value={s.waTarget} onChange={(e) => set('waTarget', e.target.value as 'web' | 'app')} data-testid="wa-target">
+            <option value="web">{t('Browser (WhatsApp Web)')}</option>
+            <option value="app">{t('WhatsApp Desktop app')}</option>
+          </select>
+        </label>
         <label className="f">{t('WhatsApp message (English). {name} and {sample} are filled in.')}<textarea className="input" rows={2} value={s.waMessageEn} onChange={(e) => set('waMessageEn', e.target.value)} /></label>
         <label className="f">{t('WhatsApp message (Hindi)')}<textarea className="input" rows={2} value={s.waMessageHi} onChange={(e) => set('waMessageHi', e.target.value)} /></label>
         <label className="f" style={{ maxWidth: 260 }}>{t('Remind about pen-drive backup every (days)')}<input className="input num" type="number" min={1} max={60} value={s.penDriveReminderDays} onChange={(e) => set('penDriveReminderDays', Number(e.target.value))} /></label>
