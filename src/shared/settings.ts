@@ -9,6 +9,11 @@ export interface Settings {
     techName: string
     techQual: string
     footer: string
+    phone: string
+    email: string
+    timings: string
+    /** registration / licence line, only printed when filled in */
+    regNo: string
   }
   paper: 'A4' | 'Letter'
   /** pre-printed letterhead mode: leave top/bottom blank */
@@ -54,7 +59,11 @@ export const DEFAULT_SETTINGS: Settings = {
     doctorQual: 'MBBS',
     techName: 'Ram Vivek Kumar',
     techQual: 'DMLT',
-    footer: 'Not valid for medico legal purpose. Use only for treatment.'
+    footer: 'Not valid for medico legal purpose. Use only for treatment.',
+    phone: '',
+    email: '',
+    timings: 'Open daily 7:00 am – 8:00 pm',
+    regNo: ''
   },
   paper: 'A4',
   letterhead: false,

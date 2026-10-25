@@ -85,6 +85,13 @@ function General({ pin }: { pin?: string }) {
           <label className="f">{t('Lab name')}<input className="input" value={s.lab.name} onChange={(e) => lab('name', e.target.value)} /></label>
           <label className="f">{t('Line under the name')}<input className="input" value={s.lab.tagline} onChange={(e) => lab('tagline', e.target.value)} /></label>
         </div>
+        <div className="grid4">
+          <label className="f">{t('Phone (printed on header)')}<input className="input" value={s.lab.phone} onChange={(e) => lab('phone', e.target.value)} /></label>
+          <label className="f">{t('Email (printed on header)')}<input className="input" value={s.lab.email} onChange={(e) => lab('email', e.target.value)} /></label>
+          <label className="f">{t('Opening hours')}<input className="input" value={s.lab.timings} onChange={(e) => lab('timings', e.target.value)} /></label>
+          <label className="f">{t('Registration no. (optional)')}<input className="input" value={s.lab.regNo} onChange={(e) => lab('regNo', e.target.value)} /></label>
+        </div>
+        <div><button className="btn ghost" onClick={async () => { const f = await guard(api.report.saveLetterhead()); if (f) toast(t('Letterhead saved'), 'ok') }} data-testid="save-letterhead">{t('Save blank letterhead PDF')}</button></div>
         <label className="f">{t('Address line')}<input className="input" value={s.lab.address} onChange={(e) => lab('address', e.target.value)} /></label>
         <div className="grid4">
           <label className="f">{t('Left signature')}<input className="input" value={s.lab.doctorName} onChange={(e) => lab('doctorName', e.target.value)} /></label>

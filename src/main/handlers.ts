@@ -6,6 +6,7 @@ import type { Sex } from '../shared/types'
 import type { AgeInput } from '../shared/types'
 import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBackup, validateBackup } from './backup'
 import { audit, type Db } from './db'
+import { renderLetterheadHtml } from '../shared/reportHtml'
 import { htmlToPdf, listPrinters, printHtml } from './electronBits'
 import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, type ParamEdit } from './master'
 import { dayReport, doctorMonthly, duesReport, pendingReport } from './owner'
@@ -170,6 +171,16 @@ export function makeHandlers(ctx: Ctx) {
         const r = await dialog.showSaveDialog(ctx.win()!, { title: 'Save report PDF', defaultPath: src.split(/[\\/]/).pop() })
         if (r.canceled || !r.filePath) return null
         writeFileSync(r.filePath, (await import('node:fs')).readFileSync(src))
+        return r.filePath
+      },
+      /** Save a blank letterhead (logo, name, address, contact) as a PDF for printing on plain paper. */
+      saveLetterhead: async () => {
+        const s = getSettings(db)
+        const buf = await htmlToPdf(renderLetterheadHtml(s.lab, s.paper), s.paper)
+        const r = await dialog.showSaveDialog(ctx.win()!, { title: 'Save letterhead PDF', defaultPath: 'KDS-letterhead.pdf' })
+        if (r.canceled || !r.filePath) return null
+        writeFileSync(r.filePath, buf)
+        shell.showItemInFolder(r.filePath)
         return r.filePath
       },
       print: async (reportId: number) => {
