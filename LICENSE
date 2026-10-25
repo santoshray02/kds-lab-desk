@@ -1,0 +1,17 @@
+Copyright (c) 2026 K.D.S. Pathology, Dalsingsarai, Samastipur, Bihar, India. All rights reserved.
+
+KDS Lab Desk is proprietary software. No licence is granted to anyone except
+K.D.S. Pathology. Without the written permission of K.D.S. Pathology you may
+not copy, modify, distribute, sublicense, sell, rent or lease this software or
+any part of it, in source or binary form.
+
+This software includes third-party components (for example Electron, Chromium,
+pdf.js, qrcode, fflate, cfb, electron-updater, pino and Baileys). Each is
+provided under its own open-source licence, which continues to apply to that
+component. Their licence notices are included with the installed program
+(for example LICENSE.electron.txt and LICENSES.chromium.html) and in each
+package's own folder under node_modules.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED. Reports produced by it must be checked and approved by the
+responsible doctor before they are issued to a patient.
