@@ -13,7 +13,7 @@ import { clock, localDate } from './patients'
  * so that deleting only one does not reset it. Patient data is never locked: only approving NEW reports pauses.
  */
 export const FREE_MONTHLY_LIMIT = 100
-export const LICENCE_CONTACT = 'rayskumar02@gmail.com'
+export const LICENCE_CONTACT = 'rayskumar02@gmail.com · santoshray.in'
 let PUBLIC_KEY_B64 = 'MCowBQYDK2VwAyEAOLNCWBf2p22XQ7h5gu1IdSQAdItzrYtUpmXenrhXSNE='
 /** Tests use their own key pair, so they never need the owner's private key. */
 export function setPublicKeyForTests(b64: string): void {
