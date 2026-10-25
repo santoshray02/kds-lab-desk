@@ -72,7 +72,7 @@ function General({ pin }: { pin?: string }) {
   async function save() {
     const r = await guard(api.settings.set({
       lab: s.lab, paper: s.paper, letterhead: s.letterhead, letterheadTopMm: s.letterheadTopMm, letterheadBottomMm: s.letterheadBottomMm,
-      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, evolution: s.evolution, silentPrint: s.silentPrint, printerName: s.printerName,
+      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, waAutoSend: s.waAutoSend, reportTrends: s.reportTrends, evolution: s.evolution, silentPrint: s.silentPrint, printerName: s.printerName,
       penDriveReminderDays: s.penDriveReminderDays
     }, pin))
     if (r) { await reloadSettings(); toast(t('Settings saved'), 'ok') }
@@ -99,6 +99,7 @@ function General({ pin }: { pin?: string }) {
           <label className="f">{t('Right signature')}<input className="input" value={s.lab.techName} onChange={(e) => lab('techName', e.target.value)} /></label>
           <label className="f">{t('Qualification')}<input className="input" value={s.lab.techQual} onChange={(e) => lab('techQual', e.target.value)} /></label>
         </div>
+        <label className="checkrow"><input type="checkbox" checked={s.reportTrends} onChange={(e) => set('reportTrends', e.target.checked)} data-testid="report-trends" /> {t('Show a small graph of the patient’s earlier results on the report')}</label>
         <label className="f">{t('Footer line')}<input className="input" value={s.lab.footer} onChange={(e) => lab('footer', e.target.value)} /></label>
       </div>
 
@@ -139,6 +140,9 @@ function General({ pin }: { pin?: string }) {
             <option value="evolution">{t('Automatic (WhatsApp gateway)')}</option>
           </select>
         </label>
+        {s.waTarget === 'evolution' && (
+          <label className="checkrow"><input type="checkbox" checked={s.waAutoSend} onChange={(e) => set('waAutoSend', e.target.checked)} data-testid="wa-auto" /> {t('Send the report on WhatsApp by itself as soon as it is approved')}</label>
+        )}
         {s.waTarget === 'evolution' && (
           <div className="grid4">
             <label className="f">{t('Gateway address')}<input className="input" placeholder="http://localhost:8080" value={s.evolution.url} onChange={(e) => setS((x) => ({ ...x, evolution: { ...x.evolution, url: e.target.value } }))} /></label>

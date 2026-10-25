@@ -382,3 +382,54 @@ describe('overview insights', () => {
     expect(i.totals.due).toBeGreaterThan(0)
   })
 })
+
+describe('delta checks and trend lines', () => {
+  const visitAt = (name: string, phone: string, day: number, hb: string, extra: Record<string, string> = {}) => {
+    clock.now = () => new Date(2026, 9, day, 10, 0, 0)
+    const v = register(name, phone, ['CBC'])
+    const rid = getEntry(db, v.visitId).reportId!
+    saveDraft(db, rid, { ...cbc, hb, ...extra })
+    return { v, rid }
+  }
+  it('warns (without blocking) when a result jumps far from the last visit, and not for old or small changes', () => {
+    const first = visitAt('Delta One', '9800000081', 1, '12.9')
+    approveReport(db, first.rid, {})
+    // same patient again 3 weeks later with a big drop
+    clock.now = () => new Date(2026, 9, 22, 10, 0, 0)
+    const again = createVisit(db, { patient: { id: first.v.patientId, name: 'Delta One', title: 'Mrs', sex: 'F', phone: '9800000081' }, age: age(34), doctor: 'Dr. A. Kumar', panelCodes: ['CBC'], paid: 0 })
+    const rid2 = getEntry(db, again.visitId).reportId!
+    const r = saveDraft(db, rid2, { ...cbc, hb: '8.0' })
+    const d = r.issues.find((i) => i.code === 'delta')
+    expect(d?.severity).toBe('warn')
+    expect(d?.message).toContain('38% lower than 12.9')
+    expect(() => approveReport(db, rid2, {})).not.toThrow() // a warning never blocks
+    // a small change is fine
+    const ok = createVisit(db, { patient: { id: first.v.patientId, name: 'Delta One', title: 'Mrs', sex: 'F', phone: '9800000081' }, age: age(34), doctor: 'Dr. A. Kumar', panelCodes: ['CBC'], paid: 0 })
+    const rid3 = getEntry(db, ok.visitId).reportId!
+    expect(saveDraft(db, rid3, { ...cbc, hb: '8.4', plt: '2.5' }).issues.some((i) => i.code === 'delta')).toBe(false)
+  })
+  it('prints a trend graph from earlier results, and switches off in settings', () => {
+    const a = visitAt('Trend One', '9800000082', 1, '11.0')
+    approveReport(db, a.rid, {})
+    clock.now = () => new Date(2026, 9, 10, 10, 0, 0)
+    const b = createVisit(db, { patient: { id: a.v.patientId, name: 'Trend One', title: 'Mrs', sex: 'F', phone: '9800000082' }, age: age(34), doctor: 'Dr. A. Kumar', panelCodes: ['CBC'], paid: 0 })
+    const rb = getEntry(db, b.visitId).reportId!
+    saveDraft(db, rb, { ...cbc, hb: '11.8', tlc: '9000', neut: '60', lymph: '34', plt: '2.4', rbc: '4.1', pcv: '36' })
+    approveReport(db, rb, {})
+    clock.now = () => new Date(2026, 9, 20, 10, 0, 0)
+    const c = createVisit(db, { patient: { id: a.v.patientId, name: 'Trend One', title: 'Mrs', sex: 'F', phone: '9800000082' }, age: age(34), doctor: 'Dr. A. Kumar', panelCodes: ['CBC'], paid: 0 })
+    const rc = getEntry(db, c.visitId).reportId!
+    saveDraft(db, rc, { ...cbc, hb: '12.4', tlc: '9000', neut: '60', lymph: '34', plt: '2.4', rbc: '4.1', pcv: '37' })
+    approveReport(db, rc, {})
+    const data = buildReportData(db, rc)
+    const hb = data.sections[0].panels[0].rows.find((r) => r.paramCode === 'hb')!
+    expect(hb.trend!.map((t) => t.v)).toEqual([11, 11.8])
+    const html = renderReportHtml(data)
+    expect(html).toContain('class="spark"')
+    expect(html).toContain('earlier results')
+    // the first-ever report has nothing to compare with
+    expect(buildReportData(db, a.rid).sections[0].panels[0].rows.every((r) => !r.trend)).toBe(true)
+    setSettings(db, { reportTrends: false })
+    expect(renderReportHtml(buildReportData(db, rc))).not.toContain('class="spark"')
+  })
+})

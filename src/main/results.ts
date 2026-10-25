@@ -124,7 +124,7 @@ export function getEntry(db: Db, visitId: number): EntryState {
   const rep = activeReport(db, visitId)
   const panels = visitPanels(db, visitId)
   const typed = rep ? storedTyped(db, rep.id) : {}
-  const res = resolveResults(panels, typed, sex, ageDays)
+  const res = resolveResults(panels, typed, sex, ageDays, { previous: previousValues(db, v.pid, visitId), refDate: v.visit_date })
   const sentOut = db.all<any>('SELECT * FROM visit_tests WHERE visit_id = ? AND sent_out = 1 ORDER BY id', visitId).map((t) => ({
     id: t.id, name: t.name, sentTo: t.sent_to, sentAt: t.sent_at, receivedAt: t.received_at, attachment: t.attachment
   }))
@@ -154,7 +154,8 @@ export function saveDraft(db: Db, reportId: number, typed: Record<string, string
   const panels = visitPanels(db, rep.visit_id)
   const clean: Record<string, string> = {}
   for (const [k, v] of Object.entries(typed)) if (typeof v === 'string' && v.trim() !== '') clean[k] = v.trim()
-  const res = resolveResults(panels, clean, sex, ageDays)
+  const { v } = visitContext(db, rep.visit_id)
+  const res = resolveResults(panels, clean, sex, ageDays, { previous: previousValues(db, v.pid, rep.visit_id), refDate: v.visit_date })
   db.tx(() => writeSnapshot(db, reportId, panels, res))
   return { issues: res.issues, duplicates: findDuplicates(db, reportId), values: res.values }
 }
@@ -182,7 +183,7 @@ export function approveReport(
   const { v, sex, ageDays } = visitContext(db, rep.visit_id)
   const panels = visitPanels(db, rep.visit_id)
   const typed = storedTyped(db, reportId)
-  const res = resolveResults(panels, typed, sex, ageDays)
+  const res = resolveResults(panels, typed, sex, ageDays, { previous: previousValues(db, v.pid, rep.visit_id), refDate: v.visit_date })
 
   const errors = res.issues.filter((i) => i.severity === 'error')
   if (errors.length) throw new AppError('INVALID', 'Fix the marked results first', errors)
@@ -259,6 +260,28 @@ export function buildReportData(db: Db, reportId: number): ReportData {
     byPanel.get(key)!.rows.push({
       name: r.name, group: r.grp, type: r.type, value: r.value, unit: r.unit, range: r.range_text, flag: r.flag, critical: !!r.critical, paramCode: r.param_code
     })
+  }
+  if (s.reportTrends && rep.status !== 'imported') {
+    const hist = db.all<any>(
+      `SELECT rr.param_code, rr.value, v.visit_date FROM report_results rr
+       JOIN reports r ON r.id = rr.report_id JOIN visits v ON v.id = r.visit_id
+       WHERE v.patient_id = ? AND v.id != ? AND v.visit_date <= ? AND r.is_current = 1 AND r.status IN ('approved','imported')
+         AND rr.param_code IS NOT NULL AND rr.type = 'numeric'
+       ORDER BY v.visit_date DESC, v.id DESC`,
+      v.patient_id, v.id, v.visit_date
+    )
+    const byCode = new Map<string, { v: number; d: string }[]>()
+    for (const h of hist) {
+      const n = parseFloat(h.value)
+      if (!isFinite(n)) continue
+      const list = byCode.get(h.param_code) ?? []
+      if (list.length < 5) list.push({ v: n, d: h.visit_date })
+      byCode.set(h.param_code, list)
+    }
+    for (const b of byPanel.values()) for (const r of b.rows) {
+      const t = r.paramCode ? byCode.get(r.paramCode) : undefined
+      if (t?.length) r.trend = [...t].reverse()
+    }
   }
   const sections = new Map<string, ReportSection>()
   for (const p of [...byPanel.values()].sort((a, b) => a.first - b.first)) {

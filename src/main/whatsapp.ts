@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
-import type { Db } from './db'
+import { audit, type Db } from './db'
 import { AppError } from './results'
 import { reportLink } from './reportsvc'
 import { getSettings } from './settings'
@@ -18,7 +18,7 @@ export interface WaPlan {
 
 export function buildWaPlan(db: Db, reportId: number): WaPlan {
   const row = db.get<any>(
-    `SELECT p.name, p.title, p.phone, v.sample_id, r.share_pin FROM reports r JOIN visits v ON v.id = r.visit_id
+    `SELECT p.name, p.title, p.phone, v.sample_id, r.share_pin, r.version FROM reports r JOIN visits v ON v.id = r.visit_id
      JOIN patients p ON p.id = v.patient_id WHERE r.id = ?`,
     reportId
   )
@@ -28,6 +28,7 @@ export function buildWaPlan(db: Db, reportId: number): WaPlan {
   const tpl = s.language === 'hi' ? s.waMessageHi : s.waMessageEn
   const display = `${row.title ? row.title + '. ' : ''}${row.name}`
   let text = tpl.replace('{name}', display).replace('{sample}', row.sample_id)
+  if (row.version > 1) text += '\n' + (s.language === 'hi' ? 'यह सुधारी हुई रिपोर्ट है, पिछली रिपोर्ट की जगह यही मान्य है।' : 'This is a corrected report. It replaces the earlier one.')
   const link = reportLink(db, reportId)
   const level = link ? 'B' : 'A'
   if (link) {
@@ -105,4 +106,46 @@ export async function testEvolution(url: string, instance: string, apiKey: strin
   } catch (e) {
     return { ok: false, message: `Cannot reach the gateway: ${(e as Error).message}` }
   }
+}
+
+export interface AutoSendStatus {
+  status: 'none' | 'sent' | 'failed'
+  at: string
+  message: string
+}
+
+/** What happened the last time the report was sent automatically (from the audit log). */
+export function autoSendStatus(db: Db, reportId: number): AutoSendStatus {
+  const r = db.get<any>(
+    "SELECT action, at, detail FROM audit_log WHERE entity = 'reports' AND entity_id = ? AND action IN ('whatsapp.auto', 'whatsapp.auto_failed') ORDER BY id DESC LIMIT 1",
+    reportId
+  )
+  if (!r) return { status: 'none', at: '', message: '' }
+  return { status: r.action === 'whatsapp.auto' ? 'sent' : 'failed', at: r.at, message: r.detail ?? '' }
+}
+
+/**
+ * Called right after a report is approved. Sends it by itself when the owner turned that on and the automatic
+ * gateway is set up. It never throws and never blocks approval: the outcome is written to the audit log and shown on the report.
+ */
+export function autoSendIfEnabled(db: Db, reportId: number, pdfPath: string | null): Promise<'off' | 'sent' | 'failed'> {
+  const s = getSettings(db)
+  if (!s.waAutoSend || s.waTarget !== 'evolution' || !s.evolution.url || !s.evolution.instance || !s.evolution.apiKey) return Promise.resolve('off')
+  if (autoSendStatus(db, reportId).status === 'sent') return Promise.resolve('sent') // never send the same report twice by itself
+  let plan: WaPlan
+  try {
+    plan = buildWaPlan(db, reportId)
+  } catch (e) {
+    return Promise.resolve('off') // no phone number: nothing to send
+    void e
+  }
+  return sendViaEvolution(db, reportId, pdfPath)
+    .then(() => {
+      audit(db, 'whatsapp.auto', 'reports', reportId, `${plan.level} to ${plan.phone}`)
+      return 'sent' as const
+    })
+    .catch((e: Error) => {
+      audit(db, 'whatsapp.auto_failed', 'reports', reportId, e.message.slice(0, 300))
+      return 'failed' as const
+    })
 }

@@ -11,7 +11,7 @@ import { clock } from '../src/main/patients'
 import { createVisit } from '../src/main/visits'
 import { approveReport, getEntry, saveDraft } from '../src/main/results'
 import { setSettings } from '../src/main/settings'
-import { sendViaEvolution, setWaFetch, testEvolution } from '../src/main/whatsapp'
+import { autoSendIfEnabled, autoSendStatus, sendViaEvolution, setWaFetch, testEvolution } from '../src/main/whatsapp'
 
 const KEY = 'k'.repeat(24)
 let server: Server
@@ -112,5 +112,37 @@ describe('KDS Lab Desk talking to the gateway', () => {
     expect((await testEvolution(base, 'kds', KEY)).ok).toBe(false)
     setSettings(db, { evolution: { url: base, instance: 'kds', apiKey: 'wrong-key-wrong-key-wrong' } })
     await expect(sendViaEvolution(db, rid, pdf)).rejects.toThrow(/401/)
+  })
+
+  it('auto-send: off by default, sends once when on, records a failure, and never throws', async () => {
+    const v = createVisit(db, { patient: { name: 'Auto Send', title: 'Mr', sex: 'M', phone: '9800000072', village: 'T' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['RBS'], paid: 0 })
+    const rid = getEntry(db, v.visitId).reportId!
+    saveDraft(db, rid, { rbs: '100' })
+    approveReport(db, rid, {})
+    const pdf = join(mkdtempSync(join(tmpdir(), 'kds-gw-')), 'auto.pdf')
+    writeFileSync(pdf, '%PDF-1.4 auto')
+    expect(await autoSendIfEnabled(db, rid, pdf)).toBe('off') // not switched on
+    setSettings(db, { waTarget: 'evolution', waAutoSend: true, evolution: { url: base, instance: 'kds', apiKey: KEY } })
+    expect(await autoSendIfEnabled(db, rid, pdf)).toBe('sent')
+    expect(sent).toHaveLength(1)
+    expect(autoSendStatus(db, rid).status).toBe('sent')
+    expect(await autoSendIfEnabled(db, rid, pdf)).toBe('sent') // not sent a second time
+    expect(sent).toHaveLength(1)
+    // gateway not linked: a failure is recorded, nothing throws
+    const v2 = createVisit(db, { patient: { name: 'Auto Two', title: 'Mr', sex: 'M', phone: '9800000073', village: 'T' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['RBS'], paid: 0 })
+    const rid2 = getEntry(db, v2.visitId).reportId!
+    saveDraft(db, rid2, { rbs: '101' })
+    approveReport(db, rid2, {})
+    state = 'close'
+    expect(await autoSendIfEnabled(db, rid2, pdf)).toBe('failed')
+    expect(autoSendStatus(db, rid2).status).toBe('failed')
+    expect(autoSendStatus(db, rid2).message).toMatch(/503/)
+    // no phone number: nothing to do
+    const v3 = createVisit(db, { patient: { name: 'No Phone', title: 'Mr', sex: 'M', phone: '', village: 'T' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['RBS'], paid: 0 })
+    const rid3 = getEntry(db, v3.visitId).reportId!
+    saveDraft(db, rid3, { rbs: '102' })
+    approveReport(db, rid3, {})
+    state = 'open'
+    expect(await autoSendIfEnabled(db, rid3, pdf)).toBe('off')
   })
 })

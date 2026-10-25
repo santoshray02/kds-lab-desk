@@ -20,7 +20,7 @@ import {
   addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, updateBill,
   type NewVisitInput, type VisitFilter
 } from './visits'
-import { buildWaPlan, copyFileToClipboard, sendViaEvolution, testEvolution } from './whatsapp'
+import { autoSendIfEnabled, autoSendStatus, buildWaPlan, copyFileToClipboard, sendViaEvolution, testEvolution } from './whatsapp'
 import { seedDemo, clearDemo } from './demo'
 import { runImport, importLog, type ImportProgress } from './importer/run'
 import { syncStatus, syncNow, testConnection, enqueueEverything, setPdfProvider } from './sync'
@@ -183,8 +183,10 @@ export function makeHandlers(ctx: Ctx) {
       save: (reportId: number, typed: Record<string, string>) => saveDraft(db, reportId, typed),
       approve: async (reportId: number, opts: { pin?: string; dupReason?: string }) => {
         const r = approveReport(db, reportId, opts)
-        await pdfOf(reportId).catch(() => undefined) // PDF is made again on demand if this fails
-        return r
+        const pdf = await pdfOf(reportId).catch(() => null) // PDF is made again on demand if this fails
+        // sent in the background: approval never waits for WhatsApp, the result shows on the report afterwards
+        void autoSendIfEnabled(db, reportId, pdf)
+        return { ...r, autoSend: getSettings(db).waAutoSend && getSettings(db).waTarget === 'evolution' }
       },
       startCorrection: (visitId: number, reason: string, pin?: string) => startCorrection(db, visitId, { reason, pin }),
       discardCorrection: (reportId: number, pin?: string) => { requirePin(db, pin); discardCorrection(db, reportId) },
@@ -249,6 +251,7 @@ export function makeHandlers(ctx: Ctx) {
         shell.showItemInFolder(await pdfOf(reportId))
       },
       testEvolution: (url: string, instance: string, apiKey: string) => testEvolution(url, instance, apiKey),
+      autoStatus: (reportId: number) => autoSendStatus(db, reportId),
       openWeb: async (reportId: number) => {
         const plan = buildWaPlan(db, reportId)
         await shell.openExternal(plan.webUrl)

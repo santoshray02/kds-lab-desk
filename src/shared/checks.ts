@@ -1,5 +1,6 @@
 import { computeCalc, parseNum, relativeDiff, CALCS } from './calc'
 import { evaluate, type Evaluation } from './ranges'
+import { deltaIssues, type PreviousResult } from './delta'
 import type { Issue, PanelDef, ParamDef, ResultMap, Sex } from './types'
 
 export interface Row {
@@ -25,7 +26,14 @@ export const CALC_TOLERANCE = 0.1
  * Turn what was typed into final rows: fill auto-calculations, flag high/low, and collect problems.
  * `typed` maps parameter code → string typed by the user (calculated fields may be empty).
  */
-export function resolveResults(panels: PanelDef[], typed: Record<string, string>, sex: Sex, ageDays: number): Resolved {
+export interface DeltaContext {
+  /** the patient's most recent earlier result per parameter */
+  previous: Record<string, PreviousResult>
+  /** date of this visit, YYYY-MM-DD */
+  refDate: string
+}
+
+export function resolveResults(panels: PanelDef[], typed: Record<string, string>, sex: Sex, ageDays: number, delta?: DeltaContext): Resolved {
   const rows: Row[] = []
   const values: ResultMap = {}
   const issues: Issue[] = []
@@ -72,6 +80,7 @@ export function resolveResults(panels: PanelDef[], typed: Record<string, string>
   }
 
   issues.push(...dlcIssues(values))
+  if (delta) issues.push(...deltaIssues(values, delta.previous, delta.refDate))
   return { rows, values, issues, calculated }
 }
 

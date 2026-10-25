@@ -174,3 +174,5 @@ table.t select.input { min-width: 110px; }
 .colb .lb { font-size: 13px; color: var(--muted); }
 .split { display: flex; height: 22px; border-radius: 6px; overflow: hidden; gap: 2px; }
 @media print { .tip { display: none; } }
+
+.ok-text { color: var(--ok); font-weight: 600; }

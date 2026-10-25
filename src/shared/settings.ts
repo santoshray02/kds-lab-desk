@@ -25,6 +25,10 @@ export interface Settings {
   waMessageHi: string
   /** where "Send on WhatsApp" opens the chat */
   waTarget: 'web' | 'app' | 'evolution'
+  /** send the PDF on WhatsApp by itself when a report is approved (needs the automatic gateway) */
+  waAutoSend: boolean
+  /** small graphs of the patient's earlier results on the printed report */
+  reportTrends: boolean
   /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
   evolution: { url: string; instance: string; apiKey: string }
   analyzer: 'manual' | string
@@ -75,6 +79,8 @@ export const DEFAULT_SETTINGS: Settings = {
   waMessageEn: 'Namaste {name}, your K.D.S. Pathology report ({sample}) is ready.',
   waMessageHi: 'नमस्ते {name} जी, आपकी K.D.S. Pathology की रिपोर्ट ({sample}) तैयार है।',
   waTarget: 'web',
+  waAutoSend: false,
+  reportTrends: true,
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',
   silentPrint: false,

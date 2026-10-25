@@ -64,7 +64,7 @@ function EntryView({ e, reload }: { e: Entry; reload: () => void }) {
   typedRef.current = typed
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const ageDays = ageToDays(e.visit.age)
-  const resolved = useMemo(() => resolveResults(e.panels, typed, e.visit.sex, ageDays), [e.panels, typed, e.visit.sex, ageDays])
+  const resolved = useMemo(() => resolveResults(e.panels, typed, e.visit.sex, ageDays, { previous: e.previous, refDate: e.visit.date }), [e.panels, typed, e.visit.sex, ageDays, e.previous, e.visit.date])
   const errors = resolved.issues.filter((i) => i.severity === 'error')
   const crit = resolved.issues.filter((i) => i.severity === 'critical')
   const warns = resolved.issues.filter((i) => i.severity === 'warn')
@@ -93,8 +93,8 @@ function EntryView({ e, reload }: { e: Entry; reload: () => void }) {
   async function approve(dupReason?: string, pin?: string): Promise<void> {
     await flush()
     try {
-      await api.results.approve(e.reportId!, { pin, dupReason })
-      toast(t('Report approved and locked.'), 'ok')
+      const done = await api.results.approve(e.reportId!, { pin, dupReason })
+      toast(done.autoSend ? t('Report approved and locked. Sending on WhatsApp…') : t('Report approved and locked.'), 'ok')
       reload()
     } catch (err) {
       if (!(err instanceof ApiError)) return toast(String(err), 'bad')
@@ -257,6 +257,12 @@ function ValueInput({ p, value, placeholder, bad, auto, onChange }: { p: ParamDe
 function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
   const { t, toast, guard, askPin, confirm, prompt, settings, go } = useApp()
   const versions = useAsync(() => api.results.versions(e.visit.id), [e.visit.id, e.reportId])
+  // the automatic WhatsApp send runs in the background after approval: look a few times for how it went
+  const auto = useAsync(() => api.whatsapp.autoStatus(e.reportId!), [e.reportId])
+  useEffect(() => {
+    const ids = [3000, 8000, 20000].map((ms) => setTimeout(() => auto.reload(), ms))
+    return () => ids.forEach(clearTimeout)
+  }, [e.reportId])
   const [selected, setSelected] = useState<number | null>(null)
   const reportId = selected ?? e.reportId!
   const html = useAsync(() => api.report.html(reportId), [reportId])
@@ -318,6 +324,11 @@ function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
           <button className="btn ghost" onClick={openPdf} data-testid="open-pdf">{t('Open PDF')}</button>
           <button className="btn wa" onClick={wa} disabled={!hasPhone || busy === 'wa' || imported} title={hasPhone ? '' : t('No phone number')} data-testid="whatsapp">{t('Send on WhatsApp')}</button>
           {!hasPhone && !imported && <span className="muted">{t('No phone number: print only.')}</span>}
+          {auto.data && auto.data.status !== 'none' && (
+            <span className={auto.data.status === 'sent' ? 'ok-text' : 'flagtext'} data-testid="auto-status">
+              {auto.data.status === 'sent' ? `✓ ${t('Sent on WhatsApp automatically')} ${fmtDateTime(auto.data.at)}` : `⚠ ${t('Automatic WhatsApp sending failed. Use the green button.')}`}
+            </span>
+          )}
           <div className="grow" />
           {!imported && sel?.is_current !== 0 && <button className="btn ghost" onClick={correct} data-testid="correct">✎ {t('Correct report')}</button>}
         </div>

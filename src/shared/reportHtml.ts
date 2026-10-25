@@ -11,6 +11,8 @@ export interface ReportRow {
   flag: Flag
   critical?: boolean
   paramCode: string | null
+  /** this patient's earlier numeric results of the same test, oldest first (at most 5) */
+  trend?: { v: number; d: string }[]
 }
 export interface ReportPanel {
   code: string | null
@@ -93,10 +95,26 @@ function gauge(r: ReportRow): string {
   return `<div class="gz"><i class="ok" style="left:${pos(lo).toFixed(1)}%;width:${(pos(hi) - pos(lo)).toFixed(1)}%"></i><b class="mk${cls}" style="left:${pos(v).toFixed(1)}%"></b></div>`
 }
 
+/** A tiny line of the earlier results plus this one; the last dot is red when this result is flagged. */
+function sparkline(r: ReportRow): string {
+  const cur = parseFloat(r.value)
+  if (!r.trend?.length || !isFinite(cur) || r.type !== 'numeric') return ''
+  const pts = [...r.trend.map((p) => p.v), cur]
+  const lo = Math.min(...pts), hi = Math.max(...pts)
+  if (hi === lo) return '' // nothing changed: a flat line says nothing
+  const span = hi - lo || 1
+  const W = 54, H = 14
+  const xy = pts.map((v, i) => [2 + (i * (W - 4)) / (pts.length - 1), H - 2 - ((v - lo) / span) * (H - 4)])
+  const last = xy[xy.length - 1]
+  const bad = r.flag === 'H' || r.flag === 'L'
+  const tip = [...r.trend.map((p) => `${p.d.split('-').reverse().join('/')}: ${p.v}`), `today: ${cur}`].join(' | ')
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><title>${esc(tip)}</title><polyline points="${xy.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#8a90a8" stroke-width="1.2" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" fill="${bad ? '#b3261e' : '#2b3a8f'}"/></svg>`
+}
+
 function rowHtml(r: ReportRow): string {
   const abnormal = r.flag != null
   const val = r.value === '' ? '' : esc(r.value) + (r.flag === 'H' || r.flag === 'L' ? ` ${r.flag}` : '')
-  return `<tr class="row${abnormal ? ' ab' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}${gauge(r)}</td></tr>`
+  return `<tr class="row${abnormal ? ' ab' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}${sparkline(r)}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}${gauge(r)}</td></tr>`
 }
 
 function widalHtml(p: ReportPanel): string {
@@ -145,6 +163,7 @@ export function renderReportHtml(d: ReportData): string {
         .join('; ')}</div>`
     : ''
   const header = d.letterhead ? '' : letterheadBlock(d.lab)
+  const hasTrend = d.sections.some((s) => s.panels.some((p) => p.rows.some((r) => r.trend?.length)))
   const flagged = d.sections.flatMap((x) => x.panels.flatMap((p) => p.rows)).filter((r) => r.value !== '' && (r.flag === 'H' || r.flag === 'L'))
   const crit = flagged.filter((r) => r.critical).length
   const summary = flagged.length
@@ -191,6 +210,8 @@ table.res td.v{font-weight:500}
 .gz .ok{position:absolute;top:0;bottom:0;background:#9fd6ad;border-radius:3px}
 .gz .mk{position:absolute;top:-2px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;background:var(--ac)}
 .gz .mk.bad{background:var(--bad)}
+.spark{display:inline-block;vertical-align:middle;margin-left:7px}
+.trendnote{font-size:8pt;color:var(--mut);margin:4px 2px 0}
 .stamp{text-align:center;font-size:8pt;color:var(--mut);margin-top:3px}
 .widal-head{margin:4px 2px;font-size:10.5pt}
 table.grid{width:100%;border-collapse:collapse;margin:4px 0;font-size:10pt}
@@ -219,7 +240,7 @@ table.grid td.ant,table.grid th.ant{text-align:left}
 <div class="mid"><div class="qr">${d.qrSvg}</div><div>${esc(d.qrCaption)}</div>${d.verifyCode ? `<div class="code">${esc(d.verifyCode)}</div>` : ''}</div>
 <div class="sig"><i></i>${esc(d.lab.techName)}<small>${esc(d.lab.techQual)}</small></div>
 </div>${d.approvedAtText && !d.watermark ? `<div class="stamp">Electronically approved ${esc(new Date(d.approvedAtText).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }))} · ${esc(d.lab.doctorName)}</div>` : ''}<div class="disc">${esc(d.lab.footer)}${d.version > 1 ? ` · Version ${d.version}` : ''}</div></td></tr></tfoot>
-<tbody><tr><td>${summary}${asked}${corr}${sections}${sent}</td></tr></tbody></table></body></html>`
+<tbody><tr><td>${summary}${asked}${corr}${sections}${sent}${hasTrend ? `<div class="trendnote">The small graph under a result shows this patient's earlier results from this lab (oldest on the left); the dot is today's result.</div>` : ''}</td></tr></tbody></table></body></html>`
 }
 
 /** A blank sheet carrying only the letterhead, to print on plain paper or send to a printing press. */
