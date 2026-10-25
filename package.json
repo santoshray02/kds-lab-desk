@@ -9,6 +9,7 @@
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.5",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
@@ -28,5 +29,14 @@
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
+  },
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "npm run build && playwright test",
+    "dist": "npm run build && electron-builder --win nsis --publish never"
   }
 }

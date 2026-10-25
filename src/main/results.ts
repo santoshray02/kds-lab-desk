@@ -114,6 +114,8 @@ export interface EntryState {
   duplicates: DuplicateHit[]
   previous: Record<string, { value: string; date: string; sampleId: string; flag: string | null }>
   hasCorrectionDraft: boolean
+  correctionReason: string
+  phone: string
   sentOut: { id: number; name: string; sentTo: string | null; sentAt: string | null; receivedAt: string | null; attachment: string | null }[]
 }
 
@@ -138,6 +140,8 @@ export function getEntry(db: Db, visitId: number): EntryState {
     duplicates: rep ? findDuplicates(db, rep.id) : [],
     previous: previousValues(db, v.pid, visitId),
     hasCorrectionDraft: !!rep && rep.status === 'draft' && rep.version > 1,
+    correctionReason: rep && rep.status === 'draft' && rep.version > 1 ? db.get<{ reason: string | null }>('SELECT reason FROM reports WHERE id = ?', rep.id)?.reason ?? '' : '',
+    phone: v.pphone ?? '',
     sentOut
   }
 }

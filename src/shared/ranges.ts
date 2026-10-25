@@ -5,7 +5,7 @@ import type { Flag, ParamDef, RangeRow, Sex } from './types'
 export function selectRange(ranges: RangeRow[], sex: Sex, ageDays: number): RangeRow | null {
   const fits = ranges.filter((r) => ageDays >= r.ageMinDays && ageDays < r.ageMaxDays)
   if (!fits.length) return null
-  const exact = fits.find((r) => r.sex === sex && sex !== 'O')
+  const exact = sex === 'O' ? undefined : fits.find((r) => r.sex === sex)
   if (exact) return exact
   const all = fits.find((r) => r.sex === 'A')
   if (all) return all

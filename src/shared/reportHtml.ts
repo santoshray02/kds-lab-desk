@@ -82,7 +82,7 @@ function widalHtml(p: ReportPanel): string {
 }
 
 function panelHtml(p: ReportPanel): string {
-  if (p.code === 'WIDAL') return `<div class="panel">${widalHtml(p)}</div>`
+  if (p.code === 'WIDAL') return `<div class="panel small">${widalHtml(p)}</div>`
   // a panel with only qualitative single results is printed like the lab's serology blocks
   const body: string[] = []
   let lastGroup: string | null = null
@@ -91,7 +91,7 @@ function panelHtml(p: ReportPanel): string {
     lastGroup = r.group
     body.push(rowHtml(r))
   }
-  return `<div class="panel"><div class="ptitle">${esc(p.name)}</div><table class="res"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
+  return `<div class="panel${p.rows.length <= 8 ? ' small' : ''}"><div class="ptitle">${esc(p.name)}</div><table class="res"><colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
 <thead><tr><th>Tests</th><th>Result</th><th>Unit</th><th>Limitations</th></tr></thead><tbody>${body.join('')}</tbody></table></div>`
 }
 
@@ -132,8 +132,9 @@ table.page>thead>tr>td,table.page>tbody>tr>td,table.page>tfoot>tr>td{padding:0}
 .asked{font-weight:600;font-size:10.5pt;margin:2px 2px 4px}
 .corr{border:1px solid #c2185b;color:#c2185b;font-size:9.5pt;padding:3px 6px;margin:2px 0 6px}
 .section{margin-bottom:8px}
-.stitle{text-align:center;font-weight:800;letter-spacing:.45em;font-size:11.5pt;padding:3px 0;border-top:1px solid #222;border-bottom:1px solid #222;margin:6px 0 4px}
-.ptitle{font-weight:700;font-size:10.5pt;margin:5px 0 2px;text-decoration:underline}
+.stitle{break-after:avoid;page-break-after:avoid;text-align:center;font-weight:800;letter-spacing:.45em;font-size:11.5pt;padding:3px 0;border-top:1px solid #222;border-bottom:1px solid #222;margin:6px 0 4px}
+.ptitle{font-weight:700;font-size:10.5pt;margin:5px 0 2px;text-decoration:underline;break-after:avoid;page-break-after:avoid}
+.panel.small{break-inside:avoid;page-break-inside:avoid}
 table.res{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 table.res col.c1{width:46%}table.res col.c2{width:17%}table.res col.c3{width:14%}table.res col.c4{width:23%}
 table.res th{text-align:left;font-size:10pt;border-bottom:1px solid #444;padding:2px 3px}
