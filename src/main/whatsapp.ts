@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { join } from 'node:path'
 import QRCode from 'qrcode'
@@ -170,8 +170,33 @@ export function initBuiltin(dataDir: string): void {
   authDirPath = join(dataDir, 'whatsapp-auth') // a login: deliberately not part of backups
 }
 
+/**
+ * For the promotional video and demos only (KDS_FAKE_WHATSAPP=1): a pretend WhatsApp that shows a QR, "links" itself
+ * after a few seconds and writes every message to fake-whatsapp.log instead of sending it.
+ */
+function fakeWhatsApp(): WhatsAppLink {
+  let st: 'open' | 'connecting' | 'close' = 'close'
+  let qr = ''
+  const logFile = join(authDirPath || '.', '..', 'fake-whatsapp.log')
+  const write = (o: object) => appendFileSync(logFile, JSON.stringify({ at: new Date().toISOString(), ...o }) + '\n')
+  return {
+    async start() {
+      st = 'connecting'
+      qr = 'KDS-LAB-DESK-DEMO-' + 'x'.repeat(120)
+      setTimeout(() => { st = 'open'; qr = '' }, 6000)
+    },
+    state: () => st,
+    qr: () => qr,
+    phone: () => '910000000000',
+    async sendText(number, text) { write({ kind: 'text', number, text }) },
+    async sendDocument(number, d) { write({ kind: 'document', number, file: d.fileName, caption: d.caption, bytes: d.buffer.length }) },
+    async logout() { st = 'close'; qr = '' },
+    async stop() {}
+  }
+}
+
 function builtin(): WhatsAppLink {
-  if (!link) link = createWhatsApp({ authDir: authDirPath || './whatsapp-auth' })
+  if (!link) link = process.env.KDS_FAKE_WHATSAPP === '1' ? fakeWhatsApp() : createWhatsApp({ authDir: authDirPath || './whatsapp-auth' })
   return link
 }
 

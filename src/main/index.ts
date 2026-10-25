@@ -31,6 +31,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 640,
     show: false,
+    useContentSize: process.env.KDS_FIXED_WINDOW === '1', // for screen recordings only
     title: 'KDS Lab Desk',
     backgroundColor: '#f7f8fb',
     webPreferences: {
@@ -41,7 +42,7 @@ function createWindow() {
     }
   })
   win.once('ready-to-show', () => {
-    win?.maximize()
+    if (process.env.KDS_FIXED_WINDOW !== '1') win?.maximize()
     win?.show()
   })
   // links in the app open in the normal browser, never inside the lab window

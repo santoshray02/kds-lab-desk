@@ -15,3 +15,4 @@ vitest.scratch.config.mts
 gateway/.env
 gateway/auth/
 gateway/gateway.log*
+promo/
