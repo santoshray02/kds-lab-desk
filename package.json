@@ -2,9 +2,9 @@
   "name": "kds-lab-desk",
   "version": "1.4.0",
   "private": true,
-  "description": "Offline-first reporting software for K.D.S. Pathology",
+  "description": "Free, offline pathology lab reporting software for Windows: results, approval, PDF reports, WhatsApp delivery",
   "main": "out/main/index.js",
-  "author": "K.D.S. Pathology",
+  "author": "Santosh Ray <rayskumar02@gmail.com> (https://santoshray.in)",
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.64.1",
@@ -41,5 +41,33 @@
     "e2e": "npm run build && playwright test",
     "dist": "npm run build && electron-builder --win nsis --publish never"
   },
-  "homepage": "https://kdspathology.invalid"
+  "homepage": "https://github.com/santoshray02/kds-lab-desk#readme",
+  "keywords": [
+    "pathology",
+    "laboratory",
+    "lab-software",
+    "lis",
+    "lab-information-system",
+    "diagnostic-lab",
+    "medical-laboratory",
+    "pathology-reporting",
+    "report-generator",
+    "whatsapp",
+    "offline-first",
+    "electron",
+    "sqlite",
+    "react",
+    "typescript",
+    "windows",
+    "india",
+    "hindi",
+    "open-source"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/santoshray02/kds-lab-desk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/santoshray02/kds-lab-desk/issues"
+  }
 }
