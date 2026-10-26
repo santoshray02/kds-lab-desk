@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatAge, sexForTitle, titleChecks, TITLES } from '../../shared/age'
 import { SECTION_ORDER } from '../../shared/masterData'
 import type { PanelDef, Sex } from '../../shared/types'
+import { vitalsProblem } from '../../shared/vitals'
+import { EMPTY_VITALS_TEXT, VitalsFields, vitalsOf, type VitalsText } from './VitalsFields'
 import { api, enterNext, Field, fmtDate, money, useApp, useAsync, type Person } from '../ui'
 
 export function NewPatient({ personId }: { personId?: number }) {
@@ -27,6 +29,7 @@ export function NewPatient({ personId }: { personId?: number }) {
   const [paid, setPaid] = useState('')
   const [saving, setSaving] = useState(false)
   const [warnOk, setWarnOk] = useState(false)
+  const [vit, setVit] = useState<VitalsText>(EMPTY_VITALS_TEXT)
 
   const digits = phone.replace(/\D/g, '').slice(-10)
 
@@ -104,7 +107,7 @@ export function NewPatient({ personId }: { personId?: number }) {
   }
 
   const needPhone = settings.phoneRequired && digits.length !== 10
-  const canSave = name.trim().length > 1 && !!sex && ageGiven && codes.size > 0 && !needPhone && (phone === '' || digits.length === 10)
+  const canSave = name.trim().length > 1 && !!sex && ageGiven && codes.size > 0 && !needPhone && (phone === '' || digits.length === 10) && !vitalsProblem(vitalsOf(vit))
 
   async function save() {
     if (!canSave || saving) return
@@ -112,7 +115,7 @@ export function NewPatient({ personId }: { personId?: number }) {
     setSaving(true)
     const r = await guard(api.visits.create({
       patient: { id: typeof picked === 'number' ? picked : undefined, name, title, sex: sex as Sex, phone: digits, village },
-      age, doctor: doctor || 'Self', panelCodes: [...codes], discount: disc, paid: Math.min(paidN, total)
+      age, doctor: doctor || 'Self', panelCodes: [...codes], discount: disc, paid: Math.min(paidN, total), vitals: vitalsOf(vit)
     }))
     setSaving(false)
     if (r) {
@@ -209,6 +212,11 @@ export function NewPatient({ personId }: { personId?: number }) {
         ))}
         {!settings.pricesReviewed && <div className="muted" style={{ fontSize: 14 }}>{t('Prices are example rates — set the lab’s own in Settings.')}</div>}
       </div>
+
+      <details className="card" data-testid="vitals-details">
+        <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 18 }}>➕ {t('Vitals (optional): height, weight, blood pressure…')}</summary>
+        <div style={{ marginTop: 12 }}><VitalsFields value={vit} onChange={setVit} ageYears={age.years} /></div>
+      </details>
 
       <div className="card">
         <div className="grid4">

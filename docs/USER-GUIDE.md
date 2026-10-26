@@ -178,6 +178,21 @@ Press **Print this page** to print any of these.
 
 ---
 
+## Changing a mobile number or other details
+
+Open the patient (Patients & search → the name), or open any visit, and press **✎ Edit details**. You can correct the name, title, sex, **mobile number** and village. If a PIN is set, it is asked first. Changing the number changes it for that person only (other family members on the same number keep theirs). Reports already made show the corrected details when printed again.
+The sex cannot be changed after a report was issued; make a correction to the report instead.
+
+**हिंदी में:** मरीज़ या विज़िट खोलकर **✎ विवरण बदलें** दबाएँ। नाम, मोबाइल नंबर, गाँव आदि सुधारे जा सकते हैं।
+
+## Vitals (height, weight, blood pressure…)
+
+On the **New patient** screen, open **➕ Vitals (optional)** and type what you measured: height (cm), weight (kg), blood pressure (upper and lower), pulse, temperature (°F) and oxygen level (SpO₂). For adults the program shows the BMI by itself. Leave blank whatever you did not measure. Impossible numbers (for example height 16 instead of 160) are refused.
+You can add or change vitals on the visit page (**Add vitals / Change vitals**) until the report is approved. After approval they are locked with the report; start a correction to change them.
+Vitals are for your records and the doctor. They print on the report only if you switch on **Settings → General → Print the vitals…**.
+
+**हिंदी में:** नए मरीज़ की स्क्रीन पर **वाइटल्स** में ऊँचाई, वज़न, ब्लड प्रेशर आदि भरें। बड़ों के लिए BMI अपने आप निकलता है। रिपोर्ट अप्रूव होने के बाद ये लॉक हो जाते हैं।
+
 ## Cost
 
 KDS Lab Desk is **free and open source** (MIT licence). There is no limit on reports and no licence code. If you want help with set-up, training or support, contact rayskumar02@gmail.com (santoshray.in).

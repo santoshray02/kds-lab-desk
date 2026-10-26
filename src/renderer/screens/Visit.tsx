@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ageToDays, formatAge, sexLabel } from '../../shared/age'
 import { resolveResults } from '../../shared/checks'
 import type { PanelDef, ParamDef } from '../../shared/types'
+import { vitalsLine, vitalsProblem } from '../../shared/vitals'
+import { EditPatientButton } from './EditPatient'
+import { textOf, VitalsFields, vitalsOf, type VitalsText } from './VitalsFields'
 import { api, ApiError, enterNext, fmtDate, fmtDateTime, money, useApp, useAsync, type Entry } from '../ui'
 
 export function VisitScreen({ visitId }: { visitId: number }) {
@@ -32,7 +35,8 @@ export function VisitScreen({ visitId }: { visitId: number }) {
   const e = entry.data
   return (
     <div className="page">
-      <PatientStrip e={e} />
+      <PatientStrip e={e} reload={entry.reload} />
+      <VitalsCard e={e} reload={entry.reload} />
       {e.status === 'draft' ? (
         <EntryView key={`${e.reportId}`} e={e} reload={entry.reload} />
       ) : e.status === 'approved' || e.status === 'imported' ? (
@@ -51,7 +55,7 @@ export function VisitScreen({ visitId }: { visitId: number }) {
   )
 }
 
-function PatientStrip({ e }: { e: Entry }) {
+function PatientStrip({ e, reload }: { e: Entry; reload: () => void }) {
   const { t } = useApp()
   const v = e.visit
   return (
@@ -66,10 +70,42 @@ function PatientStrip({ e }: { e: Entry }) {
         <div className="muted">{t('Sample ID')}</div>
         <div className="mono" style={{ fontSize: 26, fontWeight: 800, color: 'var(--hema)' }} data-testid="sample-id">{v.sampleId}</div>
       </div>
-      <div>
+      <div className="row">
+        <EditPatientButton patientId={v.patientId} onSaved={reload} />
         {e.status === 'draft' && <span className="tag pending">{t('Results pending')}</span>}
         {e.status === 'approved' && <span className="tag ok">🔒 {t('Approved')}{e.version > 1 ? ` · v${e.version}` : ''}</span>}
         {e.status === 'imported' && <span className="tag grey">{t('Imported (read-only)')}</span>}
+      </div>
+    </div>
+  )
+}
+
+/** Height, weight, blood pressure etc. Editable until the report is approved, then locked like the results. */
+function VitalsCard({ e, reload }: { e: Entry; reload: () => void }) {
+  const { t, guard, toast } = useApp()
+  const [editing, setEditing] = useState(false)
+  const [txt, setTxt] = useState<VitalsText>(textOf(e.vitals))
+  const line = vitalsLine(e.vitals, e.visit.age.years)
+  if (!editing && !line && !e.vitalsEditable) return null
+  if (!editing) {
+    return (
+      <div className="card row wrap" data-testid="vitals-card">
+        <div className="grow"><b>{t('Vitals')}:</b> {line ? <span data-testid="vitals-line">{line}</span> : <span className="muted">{t('not taken')}</span>}</div>
+        {e.vitalsEditable ? <button className="btn ghost" onClick={() => { setTxt(textOf(e.vitals)); setEditing(true) }} data-testid="vitals-edit">✎ {line ? t('Change vitals') : t('Add vitals')}</button> : <span className="muted">🔒 {t('locked with the report')}</span>}
+      </div>
+    )
+  }
+  async function save() {
+    const r = await guard(api.visits.saveVitals(e.visit.id, vitalsOf(txt)))
+    if (r !== undefined) { toast(t('Saved'), 'ok'); setEditing(false); reload() }
+  }
+  return (
+    <div className="card col" data-testid="vitals-editor">
+      <b>{t('Vitals')}</b>
+      <VitalsFields value={txt} onChange={setTxt} ageYears={e.visit.age.years} />
+      <div className="row">
+        <button className="btn" disabled={!!vitalsProblem(vitalsOf(txt))} onClick={save} data-testid="vitals-save">{t('Save')}</button>
+        <button className="btn ghost" onClick={() => setEditing(false)}>{t('Cancel')}</button>
       </div>
     </div>
   )

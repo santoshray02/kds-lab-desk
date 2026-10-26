@@ -10,6 +10,7 @@ import { renderLetterheadHtml } from '../shared/reportHtml'
 import { htmlToPdf, listPrinters, printHtml } from './electronBits'
 import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, setPanelSentOut, type ParamEdit } from './master'
 import { dayReport, insights, doctorMonthly, duesReport, pendingReport } from './owner'
+import type { Vitals } from '../shared/vitals'
 import { updatePatient, getPatient, peopleByPhone, searchPeople, suggestDoctors, type PatientInput } from './patients'
 import { ensurePdf, reportHtml, reportLink } from './reportsvc'
 import {
@@ -17,7 +18,7 @@ import {
 } from './results'
 import { checkPin, getSettings, hasPin, setPin, setSettings } from './settings'
 import {
-  addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, updateBill,
+  addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, saveVitals, updateBill,
   type NewVisitInput, type VisitFilter
 } from './visits'
 import { builtinLink, builtinResume, builtinStatus, builtinUnlink, initBuiltin, sendAutomatically } from './whatsapp'
@@ -168,6 +169,7 @@ export function makeHandlers(ctx: Ctx) {
         cancelVisit(db, visitId, reason)
       },
       removeTest: (visitTestId: number) => removeTest(db, visitTestId),
+      saveVitals: (visitId: number, v: Vitals) => { saveVitals(db, visitId, v); return true },
       markSentOut: (id: number, data: { sentTo?: string; sentAt?: string; receivedAt?: string | null }) => markSentOut(db, id, data),
       attachSentOut: async (visitTestId: number) => {
         const r = await dialog.showOpenDialog(ctx.win()!, { title: 'Choose the report received from the other lab', filters: [{ name: 'PDF', extensions: ['pdf'] }], properties: ['openFile'] })

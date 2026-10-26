@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { EditPatientButton } from './EditPatient'
 import { formatAge } from '../../shared/age'
 import { api, fmtDate, money, useApp, useAsync } from '../ui'
 import { VisitTable } from './Today'
@@ -87,7 +88,7 @@ function Visits() {
 }
 
 function PatientPage({ id }: { id: number }) {
-  const { t, go, askPin, guard, toast, prompt } = useApp()
+  const { t, go } = useApp()
   const p = useAsync(() => api.patients.get(id), [id])
   const visits = useAsync(() => api.visits.list({ patientId: id, limit: 500 }), [id])
   const total = visits.data?.reduce((a, v) => a + v.due, 0) ?? 0
@@ -101,12 +102,7 @@ function PatientPage({ id }: { id: number }) {
           <div className="muted">{x.sex === 'F' ? t('Female') : t('Male')} · {x.phone || t('no phone')} · {x.village}</div>
         </div>
         <button className="btn big" onClick={() => go({ name: 'new', personId: id })} data-testid="new-visit">➕ {t('New visit for this person')}</button>
-        <button className="btn ghost" onClick={async () => {
-          const pin = (await api.settings.pinStatus()).ownerSet ? await askPin(t('PIN to edit patient details')) : ''
-          if (pin === null) return
-          const name = await prompt({ title: t('Edit name'), label: t('Correct the name'), minLength: 2 })
-          if (name && name.trim() && name !== x.name) { await guard(api.patients.update({ ...x, sex: x.sex, name: name.trim() }, pin || undefined)); toast(t('Saved'), 'ok'); p.reload() }
-        }}>✎ {t('Edit name')}</button>
+        <EditPatientButton patientId={id} onSaved={p.reload} />
       </div>
       {total > 0 && <div className="alert warn"><b>{t('Dues')}</b><span>{money(total)}</span></div>}
       <div className="card">

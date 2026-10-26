@@ -50,6 +50,8 @@ export interface ReportData {
   /** short integrity code printed under the QR; changes if any result changes */
   verifyCode?: string
   approvedAtText: string
+  /** one line of vitals; empty when not taken or not switched on in Settings */
+  vitalsText?: string
 }
 
 const esc = (s: string) =>
@@ -170,6 +172,7 @@ export function renderReportHtml(d: ReportData): string {
     ? `<div class="sum"><b>${flagged.length} result${flagged.length > 1 ? 's' : ''} outside the reference range${crit ? ` (${crit} critical)` : ''}:</b><span>${flagged.slice(0, 5).map((r) => `${esc(r.name.replace(/\s*\(.*\)$/, ''))} ${esc(r.value)} ${r.flag}`).join(' · ')}${flagged.length > 5 ? ` · +${flagged.length - 5} more` : ''}</span></div>`
     : ''
   const asked = d.testAsked ? `<div class="asked">Test Asked : ${esc(d.testAsked)}</div>` : ''
+  const vit = d.vitalsText ? `<div class="asked">Vitals : ${esc(d.vitalsText)}</div>` : ''
   const corr = d.correctionNote ? `<div class="corr">${esc(d.correctionNote)}</div>` : ''
   const wm = d.watermark ? `<div class="wm">${esc(d.watermark)}</div>` : ''
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(d.sampleId)}</title><style>${LETTERHEAD_CSS}
@@ -240,7 +243,7 @@ table.grid td.ant,table.grid th.ant{text-align:left}
 <div class="mid"><div class="qr">${d.qrSvg}</div><div>${esc(d.qrCaption)}</div>${d.verifyCode ? `<div class="code">${esc(d.verifyCode)}</div>` : ''}</div>
 <div class="sig"><i></i>${esc(d.lab.techName)}<small>${esc(d.lab.techQual)}</small></div>
 </div>${d.approvedAtText && !d.watermark ? `<div class="stamp">Electronically approved ${esc(new Date(d.approvedAtText).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }))} · ${esc(d.lab.doctorName)}</div>` : ''}<div class="disc">${esc(d.lab.footer)}${d.version > 1 ? ` · Version ${d.version}` : ''}</div></td></tr></tfoot>
-<tbody><tr><td>${summary}${asked}${corr}${sections}${sent}${hasTrend ? `<div class="trendnote">The small graph under a result shows this patient's earlier results from this lab (oldest on the left); the dot is today's result.</div>` : ''}</td></tr></tbody></table></body></html>`
+<tbody><tr><td>${summary}${asked}${vit}${corr}${sections}${sent}${hasTrend ? `<div class="trendnote">The small graph under a result shows this patient's earlier results from this lab (oldest on the left); the dot is today's result.</div>` : ''}</td></tr></tbody></table></body></html>`
 }
 
 /** A blank sheet carrying only the letterhead, to print on plain paper or send to a printing press. */

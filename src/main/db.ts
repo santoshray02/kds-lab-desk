@@ -149,6 +149,19 @@ CREATE TABLE import_log(
   visit_id INTEGER, file_hash TEXT);
 CREATE INDEX ix_import_file ON import_log(file_hash);
 `
+  },
+  {
+    id: 2,
+    name: 'vitals on visits',
+    sql: `
+ALTER TABLE visits ADD COLUMN height_cm REAL;
+ALTER TABLE visits ADD COLUMN weight_kg REAL;
+ALTER TABLE visits ADD COLUMN bp_sys INTEGER;
+ALTER TABLE visits ADD COLUMN bp_dia INTEGER;
+ALTER TABLE visits ADD COLUMN pulse INTEGER;
+ALTER TABLE visits ADD COLUMN temp_f REAL;
+ALTER TABLE visits ADD COLUMN spo2 INTEGER;
+`
   }
 ]
 

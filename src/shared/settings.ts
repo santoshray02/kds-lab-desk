@@ -31,6 +31,8 @@ export interface Settings {
   waBuiltin: boolean
   /** small graphs of the patient's earlier results on the printed report */
   reportTrends: boolean
+  /** print the height, weight, blood pressure etc. on the report when they were taken */
+  reportVitals: boolean
   /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
   evolution: { url: string; instance: string; apiKey: string }
   analyzer: 'manual' | string
@@ -84,6 +86,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waAutoSend: false,
   waBuiltin: false,
   reportTrends: true,
+  reportVitals: false,
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',
   silentPrint: false,

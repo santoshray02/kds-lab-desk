@@ -151,3 +151,11 @@ with the reason, so the doctor or a helper can change it later.
 * Copies that had a licence saved keep an unused `_license` setting; it does nothing.
 * Earlier history of this decision is in git (commit 1fb4975 and 2479614).
 
+
+## Edit mobile number and vitals (1.4.0)
+* **Edit details** replaces the old "Edit name" prompt: name, title, sex, mobile number, village, on the patient page and the visit page. Same PIN rule as before. A change drops cached PDFs and re-syncs the report so printed copies show the corrected details. Sex stays locked once a report is issued.
+* **Vitals** (height cm, weight kg, BP, pulse, temperature °F, SpO2) are stored on the visit (migration 2), all optional. Temperature is in °F because that is what Indian labs and clinics use. Impossible values are refused (e.g. height 16, diastolic above systolic).
+* **BMI only for adults (18+).** Children need growth charts, which this program does not have, so none is shown for them.
+* **Vitals lock with the report.** Editable while there is no report or a draft (including a correction draft); locked once approved, so a printed report cannot change after the fact.
+* **Printing vitals is off by default** (Settings), to keep the printed layout the owner already knows. When on, one "Vitals :" line appears under "Test Asked".
+* Vitals are not sent to the cloud (the cloud page only needs the report).

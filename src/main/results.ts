@@ -5,7 +5,9 @@ import { SECTION_ORDER } from '../shared/masterData'
 import type { ReportData, ReportPanel, ReportRow, ReportSection } from '../shared/reportHtml'
 import type { Issue, PanelDef, ResultMap, Sex } from '../shared/types'
 import { audit, enqueue, nowIso, type Db } from './db'
+import { vitalsLine, type Vitals } from '../shared/vitals'
 import { loadMaster } from './master'
+import { vitalsOf } from './visits'
 import { getSettings, checkApprover, checkPin, hasPin } from './settings'
 
 export class AppError extends Error {
@@ -116,6 +118,9 @@ export interface EntryState {
   hasCorrectionDraft: boolean
   correctionReason: string
   phone: string
+  vitals: Vitals
+  /** vitals can still be changed (the report is not approved yet) */
+  vitalsEditable: boolean
   sentOut: { id: number; name: string; sentTo: string | null; sentAt: string | null; receivedAt: string | null; attachment: string | null }[]
 }
 
@@ -142,6 +147,8 @@ export function getEntry(db: Db, visitId: number): EntryState {
     hasCorrectionDraft: !!rep && rep.status === 'draft' && rep.version > 1,
     correctionReason: rep && rep.status === 'draft' && rep.version > 1 ? db.get<{ reason: string | null }>('SELECT reason FROM reports WHERE id = ?', rep.id)?.reason ?? '' : '',
     phone: v.pphone ?? '',
+    vitals: vitalsOf(v),
+    vitalsEditable: !rep || rep.status === 'draft',
     sentOut
   }
 }
@@ -305,6 +312,7 @@ export function buildReportData(db: Db, reportId: number): ReportData {
     sampleId: v.sample_id, dateText: `${dd}/${mm}/${yy}`, doctor: v.doctor, specimen: v.specimen, testAsked: asked.join(', '),
     version: rep.version, correctionNote, watermark,
     sections: [...sections.values()].sort((a, b) => secRank(a.title) - secRank(b.title)),
-    sentOut, qrSvg: '', qrCaption: 'Scan to verify this report', approvedAtText: rep.approved_at ?? ''
+    sentOut, qrSvg: '', qrCaption: 'Scan to verify this report', approvedAtText: rep.approved_at ?? '',
+    vitalsText: s.reportVitals ? vitalsLine(vitalsOf(v), v.age_y) : ''
   }
 }

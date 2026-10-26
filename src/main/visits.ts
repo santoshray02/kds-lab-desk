@@ -2,6 +2,7 @@ import { copyFileSync, mkdirSync } from 'node:fs'
 import { basename, join } from 'node:path'
 import { nextSampleId, titleChecks } from '../shared/age'
 import type { AgeInput, Sex } from '../shared/types'
+import { NO_VITALS, vitalsProblem, type Vitals } from '../shared/vitals'
 import { audit, enqueue, nowIso, type Db } from './db'
 import { getSettings } from './settings'
 import { clock, localDate, normalizePhone, savePatient, touchDoctor, type PatientInput } from './patients'
@@ -17,6 +18,27 @@ export interface NewVisitInput {
   paid?: number
   notes?: string
   date?: string
+  vitals?: Vitals
+}
+
+export function vitalsOf(row: any): Vitals {
+  return { heightCm: row.height_cm ?? null, weightKg: row.weight_kg ?? null, bpSys: row.bp_sys ?? null, bpDia: row.bp_dia ?? null, pulse: row.pulse ?? null, tempF: row.temp_f ?? null, spo2: row.spo2 ?? null }
+}
+
+const VITALS_SET = 'height_cm = ?, weight_kg = ?, bp_sys = ?, bp_dia = ?, pulse = ?, temp_f = ?, spo2 = ?'
+const vitalsArgs = (v: Vitals) => [v.heightCm, v.weightKg, v.bpSys, v.bpDia, v.pulse, v.tempF, v.spo2]
+
+/** Change the vitals of a visit. Once the report is approved they are part of it, so they are locked like the results. */
+export function saveVitals(db: Db, visitId: number, v: Vitals, actor = ''): void {
+  const bad = vitalsProblem(v)
+  if (bad) throw new Error(bad)
+  if (!db.get('SELECT 1 AS x FROM visits WHERE id = ?', visitId)) throw new Error('Visit not found')
+  const openDraft = db.get("SELECT 1 AS x FROM reports WHERE visit_id = ? AND status = 'draft'", visitId)
+  const current = db.get<{ status: string }>('SELECT status FROM reports WHERE visit_id = ? AND is_current = 1 ORDER BY version DESC LIMIT 1', visitId)
+  if (!openDraft && current && (current.status === 'approved' || current.status === 'imported')) throw new Error('This report is approved and locked. Start a correction to change the vitals.')
+  db.run(`UPDATE visits SET ${VITALS_SET} WHERE id = ?`, ...vitalsArgs(v), visitId)
+  audit(db, 'visit.vitals', 'visits', visitId, '', actor)
+  enqueue(db, 'visit', visitId)
 }
 
 export function generateSampleId(db: Db, date: Date = clock.now()): string {
@@ -33,6 +55,9 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
   if (a.years + a.months + a.days === 0) throw new Error('Enter the age (years, months or days)')
   const warnings = titleChecks(input.patient.title, input.patient.sex, input.age)
   const doctor = input.doctor.trim() || 'Self'
+  const vit = input.vitals ?? NO_VITALS
+  const vitBad = vitalsProblem(vit)
+  if (vitBad) throw new Error(vitBad)
 
   return db.tx(() => {
     const panels = input.panelCodes.map((c) => {
@@ -54,6 +79,7 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
       patientId, sampleId, input.date ?? localDate(now), input.age.years, input.age.months, input.age.days, doctor,
       specimens.join(', ') || 'Blood', total, discount, input.notes ?? '', nowIso()
     ).lastId
+    db.run(`UPDATE visits SET ${VITALS_SET} WHERE id = ?`, ...vitalsArgs(vit), visitId)
     panels.forEach((p, i) => {
       db.run('INSERT INTO visit_tests(visit_id, panel_id, panel_code, name, price, sent_out) VALUES(?,?,?,?,?,?)', visitId, p.id, p.code, p.name, prices[i], p.sent_out)
     })
