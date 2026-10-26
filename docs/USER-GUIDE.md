@@ -207,6 +207,9 @@ Vitals are for your records and the doctor. They print on the report only if you
 
 Everything in this section can be switched on or off, and every value has a usual setting, in **Settings → Bills, stickers & money**. The button **Put the usual values back** undoes your changes on that page.
 
+### Looking before you print
+Press **Preview report** under the results (before approving) to see how the report will look; it is marked DRAFT until you approve it. After approving, **Print** opens a preview first, with a **Print** button inside it. Receipts, stickers and the collector's list work the same way. If you do not want the extra step, untick **Show a preview before printing** in Settings → General.
+
 ### Receipt (bill for the patient)
 On the patient's page, the **Bill** card shows the price, what was paid (cash, UPI or card) and what is due. **Print receipt** opens a preview of the bill, with a **Print** button inside it (stickers and the collector's list do the same, so you can look before anything is printed); **Receipt as PDF** opens it as a PDF file. **Receive payment** records money paid later and how it was paid.
 In Settings choose a normal sheet (the receipt prints at the top) or a narrow roll printer and its width, the line at the bottom, a separate printer if you have one, and whether to print the receipt by itself when a new patient is saved (usual setting: off).

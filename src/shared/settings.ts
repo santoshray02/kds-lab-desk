@@ -95,6 +95,8 @@ export interface Settings {
   evolution: { url: string; instance: string; apiKey: string }
   analyzer: 'manual' | string
   silentPrint: boolean
+  /** show what will be printed (report, receipt, stickers, collector's list) and print from the preview */
+  previewBeforePrint: boolean
   printerName: string
   masterReviewed: boolean
   masterReviewedAt: string
@@ -157,6 +159,7 @@ export const DEFAULT_SETTINGS: Settings = {
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',
   silentPrint: false,
+  previewBeforePrint: true,
   printerName: '',
   masterReviewed: false,
   masterReviewedAt: '',

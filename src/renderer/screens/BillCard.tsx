@@ -57,14 +57,14 @@ export function BillCard({ visitId, testIds }: { visitId: number; testIds?: numb
       <div className="row wrap">
         <h2 className="grow">🧾 {t('Bill')}{v.package_name ? <span className="tag grey" style={{ marginLeft: 8 }}>📦 {v.package_name}</span> : null}</h2>
         <div className="row wrap noprint">
-          <button className="btn ghost" disabled={!!busy} onClick={() => setPreview('receipt')} data-testid="print-receipt">🖨 {t('Print receipt')}</button>
+          <button className="btn ghost" disabled={!!busy} onClick={() => (settings.previewBeforePrint ? setPreview('receipt') : run('rc', () => api.bill.printReceipt(visitId), t('Receipt sent to the printer')))} data-testid="print-receipt">🖨 {t('Print receipt')}</button>
           <button className="btn ghost" disabled={!!busy} onClick={() => run('pdf', () => api.bill.openReceiptPdf(visitId))} data-testid="receipt-pdf">{t('Receipt as PDF')}</button>
           {settings.payQr.enabled && isUpiId(settings.payQr.upiId) && due > 0 && (
             <button className="btn ghost" onClick={() => setQrOpen(true)} data-testid="show-pay-qr">▦ {t('Show payment QR')}</button>
           )}
           {settings.labels.enabled && (
             <span className="row" style={{ gap: 4 }}>
-              <button className="btn ghost" disabled={!!busy} onClick={() => setPreview('labels')} data-testid="print-labels">🏷 {t('Print stickers')}</button>
+              <button className="btn ghost" disabled={!!busy} onClick={() => (settings.previewBeforePrint ? setPreview('labels') : run('lb', () => api.bill.printLabels(visitId, Math.max(1, Math.min(20, Number(copies) || 1))), t('Stickers sent to the printer')))} data-testid="print-labels">🏷 {t('Print stickers')}</button>
               <input className="input num" style={{ width: 56, padding: '6px 8px' }} inputMode="numeric" value={copies} onChange={(e) => setCopies(e.target.value.replace(/\D/g, '').slice(0, 2))} aria-label={t('Number of stickers')} data-testid="label-copies" />
             </span>
           )}

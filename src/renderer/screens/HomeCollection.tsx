@@ -12,7 +12,7 @@ export function HomeJobs() {
     <div className="card" data-testid="home-jobs">
       <div className="row wrap">
         <h2 className="grow">🏠 {t('Home collections to do')} ({jobs.data.length})</h2>
-        <button className="btn ghost noprint" onClick={() => setPreview(true)} data-testid="home-print">🖨 {t('Print the list for the collector')}</button>
+        <button className="btn ghost noprint" onClick={() => (settings.previewBeforePrint ? setPreview(true) : guard(api.home.printList()))} data-testid="home-print">🖨 {t('Print the list for the collector')}</button>
       </div>
       {preview && <PrintPreview title={t('Home collection list')} load={() => api.home.listHtml()} widthMm={297} zoom={0.72} onPrint={() => api.home.printList()} onClose={() => setPreview(false)} />}
       <table className="t">

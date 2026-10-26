@@ -75,7 +75,7 @@ function General({ pin }: { pin?: string }) {
   async function save() {
     const r = await guard(api.settings.set({
       lab: s.lab, paper: s.paper, letterhead: s.letterhead, letterheadTopMm: s.letterheadTopMm, letterheadBottomMm: s.letterheadBottomMm,
-      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, waAutoSend: s.waAutoSend, reportTrends: s.reportTrends, abnormalStyle: s.abnormalStyle, reportVitals: s.reportVitals, evolution: s.evolution, silentPrint: s.silentPrint, printerName: s.printerName,
+      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, waAutoSend: s.waAutoSend, reportTrends: s.reportTrends, abnormalStyle: s.abnormalStyle, reportVitals: s.reportVitals, evolution: s.evolution, silentPrint: s.silentPrint, previewBeforePrint: s.previewBeforePrint, printerName: s.printerName,
       penDriveReminderDays: s.penDriveReminderDays
     }, pin))
     if (r) { await reloadSettings(); toast(t('Settings saved'), 'ok') }
@@ -138,6 +138,7 @@ function General({ pin }: { pin?: string }) {
           <span style={{ fontWeight: 400 }}>{t('Reading values from the analyzer over USB can be added later for supported models.')}</span>
         </label>
         <label className="checkrow"><input type="checkbox" checked={s.silentPrint} onChange={(e) => set('silentPrint', e.target.checked)} /> {t('Print straight to the printer without the print window')}</label>
+        <label className="checkrow"><input type="checkbox" checked={s.previewBeforePrint} onChange={(e) => set('previewBeforePrint', e.target.checked)} data-testid="preview-before-print" /> {t('Show a preview before printing (reports, receipts, stickers)')}</label>
       </div>
 
       <div className="card col">

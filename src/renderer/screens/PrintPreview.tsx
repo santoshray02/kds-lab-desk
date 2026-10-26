@@ -15,16 +15,18 @@ export function PrintPreview({ title, load, widthMm, heightMm, zoom = 1, note, o
   heightMm?: number
   zoom?: number
   note?: string
-  onPrint: () => Promise<unknown>
+  /** leave out for a look-only preview (a report that is not approved yet) */
+  onPrint?: () => Promise<unknown>
   onClose: () => void
 }) {
   const { t, toast } = useApp()
   const page = useAsync(load, [])
   const [busy, setBusy] = useState(false)
+  const [autoH, setAutoH] = useState(0)
   async function print() {
     setBusy(true)
     try {
-      await onPrint()
+      await onPrint?.()
       toast(t('Sent to the printer'), 'ok')
       onClose()
     } catch (e) {
@@ -34,7 +36,7 @@ export function PrintPreview({ title, load, widthMm, heightMm, zoom = 1, note, o
     }
   }
   const w = Math.round(widthMm * PX_PER_MM)
-  const h = heightMm ? Math.round(heightMm * PX_PER_MM) : 700
+  const h = heightMm ? Math.round(heightMm * PX_PER_MM) : autoH || 700
   return (
     <Modal onClose={onClose} wide>
       <h2>{title}</h2>
@@ -44,7 +46,9 @@ export function PrintPreview({ title, load, widthMm, heightMm, zoom = 1, note, o
           <iframe
             title={title}
             srcDoc={page.data}
-            sandbox=""
+            // scripts stay off; same-origin only lets this window measure the page so the whole page can be shown
+            sandbox="allow-same-origin"
+            onLoad={(ev) => { if (!heightMm) setAutoH(Math.ceil(ev.currentTarget.contentDocument?.documentElement.scrollHeight ?? 0)) }}
             style={{ width: w, height: h, border: 0, background: '#fff', boxShadow: '0 1px 6px rgba(0,0,0,.25)', zoom, display: 'inline-block' }}
           />
         ) : <div className="muted" style={{ padding: 40 }}>{page.error || t('Loading…')}</div>}
@@ -52,7 +56,7 @@ export function PrintPreview({ title, load, widthMm, heightMm, zoom = 1, note, o
       <div className="row">
         <button className="btn ghost" onClick={onClose}>{t('Close')}</button>
         <div className="grow" />
-        <button className="btn big" disabled={!page.data || busy} onClick={print} data-testid="preview-print">🖨 {busy ? t('Sending…') : t('Print')}</button>
+        {onPrint && <button className="btn big" disabled={!page.data || busy} onClick={print} data-testid="preview-print">🖨 {busy ? t('Sending…') : t('Print')}</button>}
       </div>
     </Modal>
   )

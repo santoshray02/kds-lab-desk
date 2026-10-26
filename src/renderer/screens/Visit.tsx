@@ -4,6 +4,7 @@ import { resolveResults } from '../../shared/checks'
 import type { PanelDef, ParamDef } from '../../shared/types'
 import { vitalsLine, vitalsProblem } from '../../shared/vitals'
 import { BillCard } from './BillCard'
+import { PrintPreview } from './PrintPreview'
 import { EditPatientButton } from './EditPatient'
 import { textOf, VitalsFields, vitalsOf, type VitalsText } from './VitalsFields'
 import { api, ApiError, enterNext, fmtDate, fmtDateTime, money, useApp, useAsync, type Entry } from '../ui'
@@ -120,6 +121,7 @@ function EntryView({ e, reload }: { e: Entry; reload: () => void }) {
   const [typed, setTyped] = useState<Record<string, string>>(e.typed)
   const [dups, setDups] = useState(e.duplicates)
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'dirty'>('saved')
+  const [draftPreview, setDraftPreview] = useState(false)
   const typedRef = useRef(typed)
   typedRef.current = typed
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -228,8 +230,12 @@ function EntryView({ e, reload }: { e: Entry; reload: () => void }) {
       <div className="row noprint">
         <span className="muted" data-testid="save-state">{saveState === 'saved' ? `✓ ${t('Saved on this PC')}` : saveState === 'saving' ? t('Saving…') : t('Typing…')}</span>
         <div className="grow" />
+        <button className="btn ghost" onClick={async () => { await flush(); setDraftPreview(true) }} data-testid="preview-draft">👁 {t('Preview report')}</button>
         <button className="btn big" onClick={startApprove} disabled={errors.length > 0} data-testid="approve">{t('Approve report')}</button>
       </div>
+      {draftPreview && (
+        <PrintPreview title={t('Report preview')} note={t('This is how the report will look. It stays marked DRAFT until you approve it.')} load={() => api.report.html(e.reportId!)} widthMm={settings.paper === 'Letter' ? 216 : 210} zoom={0.78} onClose={() => setDraftPreview(false)} />
+      )}
     </div>
   )
 }
@@ -327,11 +333,13 @@ function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
   const reportId = selected ?? e.reportId!
   const html = useAsync(() => api.report.html(reportId), [reportId])
   const [busy, setBusy] = useState('')
+  const [previewing, setPreviewing] = useState(false)
   const hasPhone = e.phone.length === 10
   const imported = e.status === 'imported'
   const sel = (versions.data ?? []).find((v) => v.id === reportId)
 
   async function print() {
+    if (settings.previewBeforePrint) { setPreviewing(true); return }
     setBusy('print')
     const ok = await guard(api.report.print(reportId))
     setBusy('')
@@ -403,6 +411,10 @@ function ApprovedView({ e, reload }: { e: Entry; reload: () => void }) {
           </div>
         )}
         {sel && sel.version > 1 && sel.reason && <div className="muted">{t('Reason')}: {sel.reason}</div>}
+        {previewing && (
+          <PrintPreview title={t('Report preview')} load={() => api.report.html(reportId)} widthMm={settings.paper === 'Letter' ? 216 : 210} zoom={0.78}
+            onPrint={async () => { await api.report.print(reportId) }} onClose={() => setPreviewing(false)} />
+        )}
         {html.data ? <iframe className="preview" title="report" srcDoc={html.data} sandbox="" data-testid="preview" /> : <div>{t('Loading…')}</div>}
       </div>
       <div className="row noprint">

@@ -228,3 +228,36 @@ test('home collection: register with an address, see it on Today, mark collected
     await app.close()
   }
 })
+
+test('report preview: look at a draft before approving, preview before printing, and the setting turns it off', async () => {
+  const { app, page } = await launch()
+  try {
+    expect((await call(page, 'settings.get')).previewBeforePrint).toBe(true)
+    const v = await call(page, 'visits.create', { patient: { name: 'Prev Person', title: 'Mr', sex: 'M', phone: '', village: '' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['ESR'] })
+    await page.getByTestId('nav-patients').click()
+    await page.getByTestId('nav-today').click()
+    await page.getByTestId('visit-row').first().click()
+    await page.getByTestId('row-esr').locator('input').fill('12')
+
+    // before approving: a look-only preview that still carries the DRAFT mark
+    await page.getByTestId('preview-draft').click()
+    const frame = page.getByTestId('print-preview').frameLocator('iframe')
+    await expect(frame.getByText('Prev Person', { exact: false }).first()).toBeVisible()
+    await expect(frame.getByText('12').first()).toBeVisible()
+    await expect(frame.getByText('DRAFT')).toBeVisible()
+    await expect(page.getByTestId('preview-print')).toHaveCount(0) // nothing to print yet
+    await page.getByRole('button', { name: 'Close' }).click()
+
+    // approve, then Print opens the preview with a Print button
+    await page.getByTestId('approve').click()
+    await page.getByRole('button', { name: 'Approve report' }).last().click()
+    await expect(page.getByTestId('approved-view')).toBeVisible()
+    await page.getByTestId('print').click()
+    await expect(page.getByTestId('preview-print')).toBeVisible()
+    await expect(page.getByTestId('print-preview').frameLocator('iframe').getByText('Erythrocyte Sedimentation Rate').first()).toBeVisible()
+    await page.getByRole('button', { name: 'Close' }).click()
+    expect(v.visitId).toBeGreaterThan(0)
+  } finally {
+    await app.close()
+  }
+})
