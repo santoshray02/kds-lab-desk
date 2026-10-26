@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { api, fmtDateTime, useApp, useAsync } from '../ui'
+import { DriveBackupCard } from './DriveBackup'
 
 const mb = (n: number) => `${(n / 1048576).toFixed(1)} MB`
 
@@ -62,6 +63,8 @@ export function BackupScreen() {
         {drives.data?.length === 0 && <div className="muted">{t('No pen drive found. Plug it in and press “Look again”, or choose a folder.')}</div>}
         <div className="muted" style={{ fontSize: 14 }}>{t('Every night the program also makes a copy on this PC and keeps the last 30.')}</div>
       </div>
+
+      <DriveBackupCard />
 
       <div className="card col">
         <div className="row">

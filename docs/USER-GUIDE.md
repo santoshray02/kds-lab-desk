@@ -125,7 +125,17 @@ Press **Print this page** to print any of these.
 * **Once a week** put a pen drive in the PC and press **Backup → Backup to <drive>**. The home screen reminds you.
 * Keep the pen drive somewhere safe, not in the lab.
 
-### If the PC breaks or is replaced
+### Backup to Google Drive (automatic, every night)
+1. Open **Backup → Backup to Google Drive**, type a backup password twice, press **Connect Google Drive**.
+2. A Google page opens in the browser. Sign in with the **lab's own Google account** and press **Allow**.
+3. That is all. Every night, if the PC is on and online, the program saves a copy in your Drive. It is locked with your password, so nobody can read it, not even Google. It does not use disk space on this PC.
+* **Write the backup password on paper.** If it is lost, the backups cannot be opened by anyone.
+* **If the PC breaks:** install the program on the new PC, open **Backup**, **Connect Google Drive** with the same account and the same password, then press **Restore from Google Drive**.
+* **Disconnect** stops the nightly copy. Copies already in the Drive stay there.
+
+हिंदी: **Backup → Google Drive** में पासवर्ड बनाकर **Connect** दबाएँ और लैब का Google अकाउंट चुनें। हर रात बैकअप अपने आप आपके Drive में चला जाएगा, पासवर्ड से बंद। पासवर्ड कागज़ पर लिख लें। PC ख़राब हो तो नए PC पर वही अकाउंट और पासवर्ड जोड़कर **Restore from Google Drive** करें।
+
+### If the PC breaks or is replaced (pen drive)
 1. Install KDS Lab Desk on the new PC.
 2. Plug in the pen drive, open **Backup → Restore from a backup → Choose backup folder…**, choose the newest folder whose name starts with `KDS-backup`.
 3. Check the date and numbers shown, press **Restore now**, type the PIN. The program restarts with everything back.

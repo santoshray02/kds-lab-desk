@@ -3,7 +3,8 @@ import { join } from 'node:path'
 import { mkdirSync } from 'node:fs'
 import { audit, openDb } from './db'
 import { seedMaster } from './master'
-import { makeHandlers, runNightlyIfDue, type Ctx } from './handlers'
+import { driveBackupIfDue } from './cloudBackup'
+import { getDriveDeps, makeHandlers, runNightlyIfDue, type Ctx } from './handlers'
 import { AppError } from './results'
 import { seedDemo } from './demo'
 import { getSettings } from './settings'
@@ -94,6 +95,7 @@ app.whenReady().then(() => {
   const backupTick = () => {
     try {
       runNightlyIfDue(ctx)
+      void driveBackupIfDue(ctx.db, ctx.dataDir, getDriveDeps(ctx.dataDir))
     } catch (e) {
       console.error('nightly backup failed', e)
     }

@@ -56,6 +56,8 @@ export interface Settings {
     /** public base URL of the report page, e.g. https://kds-lab.example/r */
     reportBase: string
   }
+  /** nightly password-locked copy in the owner's own Google Drive (the sign-in token and password are not kept here) */
+  driveBackup: { connected: boolean; account: string; lastBackup: string; lastError: string }
   updates: { enabled: boolean; url: string }
   demoMode: boolean
   consentLine: string
@@ -103,6 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lastNightlyBackup: '',
   penDriveReminderDays: 7,
   cloud: { enabled: false, url: '', key: '', reportBase: '' },
+  driveBackup: { connected: false, account: '', lastBackup: '', lastError: '' },
   updates: { enabled: true, url: 'https://github.com/santoshray02/kds-lab-desk/releases/latest/download' },
   demoMode: false,
   consentLine: 'Patient consents to the storage of this report for treatment and record purposes.'

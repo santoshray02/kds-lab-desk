@@ -1,9 +1,12 @@
-import { app, BrowserWindow, clipboard, dialog, shell } from 'electron'
-import { existsSync, writeFileSync } from 'node:fs'
+import { app, BrowserWindow, clipboard, dialog, safeStorage, shell } from 'electron'
+import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 import type { Settings } from '../shared/settings'
 import type { Sex } from '../shared/types'
 import type { AgeInput } from '../shared/types'
+import { connectDrive, disconnectDrive, driveStatus, fetchDriveBackup, listDriveBackups, runDriveBackup, type CloudDeps } from './cloudBackup'
+import { DriveClient, fileSecretStore } from './gdrive'
+import { GOOGLE } from '../shared/googleConfig'
 import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBackup, validateBackup } from './backup'
 import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
@@ -36,6 +39,20 @@ export interface Ctx {
 
 function requirePin(db: Db, pin: string | undefined) {
   if (hasPin(db, 'owner') && !checkPin(db, pin, 'owner')) throw new AppError('PIN', 'Wrong PIN')
+}
+
+let driveDeps: CloudDeps | null = null
+/** Google Drive client with its secrets file, encrypted by Windows (DPAPI) for the signed-in user. */
+export function getDriveDeps(dataDir: string): CloudDeps {
+  if (!driveDeps) {
+    const enc = (t: string) => {
+      if (!safeStorage.isEncryptionAvailable()) throw new AppError('DRIVE', 'Windows cannot protect the saved password on this PC, so Google Drive backup is switched off.')
+      return safeStorage.encryptString(t)
+    }
+    const secrets = fileSecretStore(join(dataDir, 'drive-secret.bin'), enc, (b) => safeStorage.decryptString(b))
+    driveDeps = { secrets, drive: new DriveClient({ clientId: GOOGLE.clientId, clientSecret: GOOGLE.clientSecret }, secrets) }
+  }
+  return driveDeps
 }
 
 export const nightlyDir = (dataDir: string) => join(dataDir, 'backups')
@@ -315,6 +332,38 @@ export function makeHandlers(ctx: Ctx) {
         app.relaunch()
         setTimeout(() => app.exit(0), 300)
         return kept
+      }
+    },
+
+    drive: {
+      status: () => driveStatus(db, getDriveDeps(ctx.dataDir)),
+      connect: (password: string, pin?: string) => {
+        requirePin(db, pin)
+        return connectDrive(db, getDriveDeps(ctx.dataDir), password, (url) => void shell.openExternal(url))
+      },
+      disconnect: (pin?: string) => {
+        requirePin(db, pin)
+        return disconnectDrive(db, getDriveDeps(ctx.dataDir))
+      },
+      backupNow: async () => {
+        const d = getDriveDeps(ctx.dataDir)
+        await runDriveBackup(db, ctx.dataDir, d)
+        return driveStatus(db, d)
+      },
+      list: () => listDriveBackups(getDriveDeps(ctx.dataDir)),
+      /** Downloads, unlocks and restores one Drive backup, then restarts. Needs the owner PIN; the password defaults to the saved one. */
+      restore: async (id: string, password?: string, pin?: string) => {
+        requirePin(db, pin)
+        const { path, tmp } = await fetchDriveBackup(getDriveDeps(ctx.dataDir), id, password || undefined)
+        db.close()
+        try {
+          const kept = restoreBackup(path, ctx.dataDir)
+          app.relaunch()
+          setTimeout(() => app.exit(0), 300)
+          return kept
+        } finally {
+          rmSync(tmp, { recursive: true, force: true })
+        }
       }
     },
 
