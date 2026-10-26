@@ -38,6 +38,9 @@
 - **WhatsApp:** link the lab phone once by scanning a code, then send the PDF with one click, or let it go out automatically when a report is approved.
 - **Owner's reports:** day register, cash and dues, doctor-wise referrals, charts, and pending tests.
 - **Safe by design:** nightly automatic backups, a one-click backup to a pen drive, restore wizard, and optional cloud sync (off until you set it up).
+- **Bills and stickers:** a receipt (A4 or narrow roll) and sample-tube stickers with a barcode or QR, plus one-tap health packages.
+- **Money tools:** doctor commission with payouts, daily expenses and cash closing, UPI / card / cash tracking, and an Excel export for the accountant.
+- **Tidy records:** finds and merges patients who were registered twice.
 - **Vitals:** height, weight, blood pressure, pulse, temperature and oxygen level, with BMI for adults.
 - **Import old Word reports** as read-only history. Tests sent to another lab are tracked as "sent out".
 - **Updates itself** from GitHub releases. **No usage limit and no licence code.**

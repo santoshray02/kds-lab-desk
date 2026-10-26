@@ -125,6 +125,13 @@ describe('expenses and cash closing', () => {
     expect(cashDay(db, '2026-10-07').opening).toBe(240)
   })
 
+  it('starts from zero until the first day is closed, however much money came before', () => {
+    visit('A One', 'Self', ['CBC'], { paid: 200 })
+    at(10, 6)
+    visit('B Two', 'Self', ['ESR'], { paid: 60 })
+    expect(cashDay(db, '2026-10-06')).toMatchObject({ opening: 0, cash: 60, expected: 60 })
+  })
+
   it('refuses silly input and deletes an expense', () => {
     expect(() => addExpense(db, { category: 'Rent', amount: 0 })).toThrow()
     expect(() => addExpense(db, { category: 'Rent', amount: 5, date: '5/10' })).toThrow(/date/)

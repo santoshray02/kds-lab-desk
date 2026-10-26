@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatAge, sexForTitle, titleChecks, TITLES } from '../../shared/age'
 import { SECTION_ORDER } from '../../shared/masterData'
 import type { PanelDef, Sex } from '../../shared/types'
+import { splitPackagePrice } from '../../shared/packages'
 import { vitalsProblem } from '../../shared/vitals'
 import { EMPTY_VITALS_TEXT, VitalsFields, vitalsOf, type VitalsText } from './VitalsFields'
 import { api, enterNext, Field, fmtDate, money, useApp, useAsync, type Person } from '../ui'
@@ -30,6 +31,9 @@ export function NewPatient({ personId }: { personId?: number }) {
   const [saving, setSaving] = useState(false)
   const [warnOk, setWarnOk] = useState(false)
   const [vit, setVit] = useState<VitalsText>(EMPTY_VITALS_TEXT)
+  const [pkg, setPkg] = useState<{ id: number; name: string; price: number; panelCodes: string[] } | null>(null)
+  const [payMethod, setPayMethod] = useState<'cash' | 'upi' | 'card' | 'other'>('cash')
+  const pkgs = useAsync(() => (settings.packages ? api.packages.list() : Promise.resolve([])), [settings.packages])
 
   const digits = phone.replace(/\D/g, '').slice(-10)
 
@@ -85,7 +89,11 @@ export function NewPatient({ personId }: { personId?: number }) {
   }, [master.data, filter])
 
   const priceOf = (c: string) => panels.find((p) => p.code === c)?.price ?? 0
-  const gross = [...codes].reduce((a, c) => a + priceOf(c), 0)
+  // a package is only offered when all its tests exist and are switched on; while all of them stay ticked it is billed at the package price
+  const usablePkgs = (pkgs.data ?? []).filter((p) => p.panelCodes.every((c) => panels.some((x) => x.code === c)))
+  const pkgOn = !!pkg && pkg.panelCodes.every((c) => codes.has(c))
+  const pkgPrices = pkgOn ? Object.fromEntries(pkg!.panelCodes.map((c, i) => [c, splitPackagePrice(pkg!.panelCodes.map(priceOf), pkg!.price)[i]])) : undefined
+  const gross = [...codes].reduce((a, c) => a + (pkgPrices?.[c] ?? priceOf(c)), 0)
   const disc = Math.max(0, Number(discount) || 0)
   const total = Math.max(0, gross - disc)
   const paidN = Math.max(0, Number(paid) || 0)
@@ -95,7 +103,17 @@ export function NewPatient({ personId }: { personId?: number }) {
   const ageGiven = age.years + age.months + age.days > 0
 
   function toggle(c: string) {
+    if (pkg?.panelCodes.includes(c) && codes.has(c)) setPkg(null) // taking a test out of a package dissolves it: normal prices apply
     setCodes((s) => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n })
+  }
+  function togglePkg(p: NonNullable<typeof pkg>) {
+    if (pkg?.id === p.id) {
+      setCodes((s) => { const n = new Set(s); for (const c of p.panelCodes) n.delete(c); return n })
+      setPkg(null)
+      return
+    }
+    setPkg(p)
+    setCodes((s) => new Set([...s, ...p.panelCodes]))
   }
   function toggleBundle(b: PanelDef) {
     setCodes((s) => {
@@ -115,11 +133,15 @@ export function NewPatient({ personId }: { personId?: number }) {
     setSaving(true)
     const r = await guard(api.visits.create({
       patient: { id: typeof picked === 'number' ? picked : undefined, name, title, sex: sex as Sex, phone: digits, village },
-      age, doctor: doctor || 'Self', panelCodes: [...codes], discount: disc, paid: Math.min(paidN, total), vitals: vitalsOf(vit)
+      age, doctor: doctor || 'Self', panelCodes: [...codes], discount: disc, paid: Math.min(paidN, total), vitals: vitalsOf(vit),
+      priceOverrides: pkgPrices, package: pkgOn ? pkg!.name : undefined, payMethod
     }))
     setSaving(false)
     if (r) {
       toast(`${t('Saved')} · ${t('Sample ID')} ${r.sampleId}`, 'ok')
+      // printing is on request in Settings; a printer problem must never stop the visit being saved
+      if (settings.receipt.autoPrint) api.bill.printReceipt(r.visitId).catch((e) => toast(String(e.message ?? e), 'bad'))
+      if (settings.labels.enabled && settings.labels.autoPrint) api.bill.printLabels(r.visitId).catch((e) => toast(String(e.message ?? e), 'bad'))
       go({ name: 'visit', visitId: r.visitId })
     }
   }
@@ -191,11 +213,26 @@ export function NewPatient({ personId }: { personId?: number }) {
           <h2 className="grow">{t('Tests')}</h2>
           <input className="input" style={{ maxWidth: 260 }} placeholder={t('Find a test…')} value={filter} onChange={(e) => setFilter(e.target.value)} data-testid="test-filter" />
         </div>
+        {!filter && settings.packages && usablePkgs.length > 0 && (
+          <div className="col" style={{ gap: 6 }} data-testid="packages">
+            <span className="muted" style={{ fontWeight: 700, fontSize: 13, letterSpacing: '.08em' }}>{t('PACKAGES')}</span>
+            <div className="chips">
+              {usablePkgs.map((p) => (
+                <button key={p.id} type="button" className={`chip${pkgOn && pkg?.id === p.id ? ' on' : ''}`} onClick={() => togglePkg(p)} data-testid={`pkg-${p.id}`} aria-pressed={pkgOn && pkg?.id === p.id}>
+                  📦 {p.name} <small>{money(p.price)}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {!filter && bundles.length > 0 && (
-          <div className="chips">
-            {bundles.map((b) => (
-              <button key={b.code} type="button" className={`chip${b.bundleCodes.every((c) => codes.has(c)) ? ' on' : ''}`} onClick={() => toggleBundle(b)}>{b.name}</button>
-            ))}
+          <div className="col" style={{ gap: 6 }}>
+            {settings.packages && usablePkgs.length > 0 && <span className="muted" style={{ fontWeight: 700, fontSize: 13, letterSpacing: '.08em' }}>{t('COMBINED TESTS')}</span>}
+            <div className="chips">
+              {bundles.map((b) => (
+                <button key={b.code} type="button" className={`chip${b.bundleCodes.every((c) => codes.has(c)) ? ' on' : ''}`} onClick={() => toggleBundle(b)}>{b.name}</button>
+              ))}
+            </div>
           </div>
         )}
         {bySection.map(([sec, list]) => (
@@ -221,7 +258,14 @@ export function NewPatient({ personId }: { personId?: number }) {
       <div className="card">
         <div className="grid4">
           <Field label={t('Discount (₹)')}><input className="input num" inputMode="numeric" data-nav value={discount} onChange={(e) => setDiscount(e.target.value.replace(/\D/g, ''))} /></Field>
-          <Field label={t('Paid now (₹)')}><input className="input num" inputMode="numeric" data-nav data-testid="paid" value={paid} onChange={(e) => setPaid(e.target.value.replace(/\D/g, ''))} /></Field>
+          <Field label={t('Paid now (₹)')}>
+            <div className="row" style={{ gap: 6 }}>
+              <input className="input num" inputMode="numeric" data-nav data-testid="paid" value={paid} onChange={(e) => setPaid(e.target.value.replace(/\D/g, ''))} style={{ minWidth: 0 }} />
+              <select className="input" value={payMethod} onChange={(e) => setPayMethod(e.target.value as typeof payMethod)} data-testid="pay-method" aria-label={t('Paid by')} style={{ maxWidth: 110 }}>
+                <option value="cash">{t('Cash')}</option><option value="upi">UPI</option><option value="card">{t('Card')}</option><option value="other">{t('Other')}</option>
+              </select>
+            </div>
+          </Field>
           <div className="stat"><div className="muted">{t('Total')}</div><div className="n" data-testid="total">{money(total)}</div></div>
           <div className="stat"><div className="muted">{t('Due')}</div><div className="n" style={{ color: total - paidN > 0 ? 'var(--eosin)' : undefined }}>{money(Math.max(0, total - paidN))}</div></div>
         </div>

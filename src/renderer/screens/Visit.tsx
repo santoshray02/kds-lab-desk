@@ -3,6 +3,7 @@ import { ageToDays, formatAge, sexLabel } from '../../shared/age'
 import { resolveResults } from '../../shared/checks'
 import type { PanelDef, ParamDef } from '../../shared/types'
 import { vitalsLine, vitalsProblem } from '../../shared/vitals'
+import { BillCard } from './BillCard'
 import { EditPatientButton } from './EditPatient'
 import { textOf, VitalsFields, vitalsOf, type VitalsText } from './VitalsFields'
 import { api, ApiError, enterNext, fmtDate, fmtDateTime, money, useApp, useAsync, type Entry } from '../ui'
@@ -37,6 +38,7 @@ export function VisitScreen({ visitId }: { visitId: number }) {
     <div className="page">
       <PatientStrip e={e} reload={entry.reload} />
       <VitalsCard e={e} reload={entry.reload} />
+      <BillCard visitId={visitId} />
       {e.status === 'draft' ? (
         <EntryView key={`${e.reportId}`} e={e} reload={entry.reload} />
       ) : e.status === 'approved' || e.status === 'imported' ? (

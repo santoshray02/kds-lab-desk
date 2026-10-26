@@ -1,6 +1,6 @@
 {
   "name": "kds-lab-desk",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "description": "Free, offline pathology lab reporting software for Windows: results, approval, PDF reports, WhatsApp delivery",
   "main": "out/main/index.js",

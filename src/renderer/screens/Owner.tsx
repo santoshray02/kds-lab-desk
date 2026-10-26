@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { Overview } from './Overview'
+import { CashBook, Commission, ExportTab } from './OwnerMoney'
 import { api, fmtDate, money, todayStr, useApp, useAsync } from '../ui'
 
 export function Owner() {
   const { t } = useApp()
-  const [tab, setTab] = useState<'overview' | 'day' | 'dues' | 'doctors' | 'pending'>('overview')
-  const tabs: [typeof tab, string][] = [['overview', 'Overview'], ['day', 'Day register'], ['dues', 'Cash & dues'], ['doctors', 'Doctor-wise (monthly)'], ['pending', 'Pending']]
+  const { settings } = useApp()
+  const [tab, setTab] = useState<'overview' | 'day' | 'dues' | 'doctors' | 'commission' | 'cash' | 'pending' | 'export'>('overview')
+  // the money tabs can be switched off in Settings
+  const tabs: [typeof tab, string][] = [['overview', 'Overview'], ['day', 'Day register'], ['dues', 'Cash & dues'], ['doctors', 'Doctor-wise (monthly)'],
+    ...(settings.money.commission ? [['commission', 'Doctor commission'] as [typeof tab, string]] : []),
+    ...(settings.money.expenses ? [['cash', 'Cash & expenses'] as [typeof tab, string]] : []),
+    ['pending', 'Pending'], ['export', 'Excel export']]
   return (
     <div className="page" data-testid="owner">
       <div className="row noprint">
@@ -19,7 +25,10 @@ export function Owner() {
       {tab === 'day' && <Day />}
       {tab === 'dues' && <Dues />}
       {tab === 'doctors' && <Doctors />}
+      {tab === 'commission' && <Commission />}
+      {tab === 'cash' && <CashBook />}
       {tab === 'pending' && <Pending />}
+      {tab === 'export' && <ExportTab />}
     </div>
   )
 }

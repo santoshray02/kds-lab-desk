@@ -203,6 +203,34 @@ Vitals are for your records and the doctor. They print on the report only if you
 
 **हिंदी में:** नए मरीज़ की स्क्रीन पर **वाइटल्स** में ऊँचाई, वज़न, ब्लड प्रेशर आदि भरें। बड़ों के लिए BMI अपने आप निकलता है। रिपोर्ट अप्रूव होने के बाद ये लॉक हो जाते हैं।
 
+## Receipts, stickers, packages and the owner's money tools (version 1.7)
+
+Everything in this section can be switched on or off, and every value has a usual setting, in **Settings → Bills, stickers & money**. The button **Put the usual values back** undoes your changes on that page.
+
+### Receipt (bill for the patient)
+On the patient's page, the **Bill** card shows the price, what was paid (cash, UPI or card) and what is due. **Print receipt** prints the bill; **Receipt as PDF** opens it on screen. **Receive payment** records money paid later and how it was paid.
+In Settings choose a normal sheet (the receipt prints at the top) or a narrow roll printer and its width, the line at the bottom, a separate printer if you have one, and whether to print the receipt by itself when a new patient is saved (usual setting: off).
+
+### Sample stickers
+**Print stickers** on the patient's page prints one sticker per tube with the sample ID, the name, the age and sex, the date, and a barcode (or a QR code). In Settings set the sticker size (usual: 50 × 25 mm), how many per patient (usual: 2), barcode or QR, what to show, the printer, and whether to print them by itself on registration (usual: off).
+
+### Health packages
+On **New patient**, tap a package (for example *Fever panel*) and all its tests are ticked and billed at the package price. If you untick one test, the package is dropped and normal prices apply. The bill shows the package name. Make your own packages in **Settings → Bills, stickers & money → Health packages**. The starter packages have **example prices**: set your own.
+
+### Doctor commission  (**Reports → Doctor commission**)
+Give each referring doctor a rate (percent) under *Doctor rates*. The page shows, for each month, what each doctor earned, what you paid, and what is still to pay. Press **Pay** to record a payment. "Self" patients never earn commission. A rate applies to patients registered from now on; earlier months keep their old rate. In Settings you can choose to work out commission on the amount billed (usual) or only on the money received.
+
+### Cash and expenses  (**Reports → Cash & expenses**)
+Type each day's expenses (rent, reagents, transport…). At night count the cash in the drawer, type it, and press **Close the day**. The program shows what the drawer *should* hold (the day's cash plus the day before's count, minus expenses; UPI and card are not cash) and tells you if it is short or extra. The first time, the day's count becomes the starting cash for the next day.
+
+### Two records of one person  (**Patients & search → Possible duplicates**)
+The program lists people who look like the same person typed twice. Choose **Keep this one**; the other record's visits move to it. Family members on one phone with different names are not listed. You can also open a person's page and press **Merge with another record**. It asks for the PIN, and cannot be undone.
+
+### Excel file  (**Reports → Excel export**)
+Choose the dates and what to include (bills, money received, patients, expenses, doctor commission) and press **Save Excel file**. It opens in Excel, LibreOffice and Google Sheets. It contains patient names and phone numbers, so keep it safe.
+
+हिंदी सारांश: **रसीद** (Bill कार्ड → Print receipt), **सैंपल स्टिकर** (Print stickers), **पैकेज** (नए मरीज़ पर एक टैप), **डॉक्टर कमीशन** (रिपोर्ट → डॉक्टर कमीशन), **नकद और ख़र्चे** (रोज़ रात दराज़ का नकद गिनकर "Close the day"), **दोहरे रिकॉर्ड जोड़ना** (Patients → Possible duplicates), **Excel एक्सपोर्ट** (रिपोर्ट → Excel export)। सब कुछ सेटिंग्स → बिल, स्टिकर और पैसे में बदला या बंद किया जा सकता है, और "सामान्य मान वापस रखें" से पुराने मान लौट आते हैं।
+
 ## Less red on the report
 **Settings → Report header → "How results outside the normal range look".**
 * **Gentle** (the default): high or low results are in **bold** with **H** or **L**. Only a dangerous (critical) value is shown in red.

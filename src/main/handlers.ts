@@ -278,7 +278,7 @@ export function makeHandlers(ctx: Ctx) {
       create: (input: NewVisitInput) => createVisit(db, input),
       list: (f: VisitFilter) => listVisits(db, f),
       get: (id: number) => getVisit(db, id),
-      addPayment: (visitId: number, amount: number, note?: string, method?: string) => addPayment(db, visitId, amount, note, method),
+      addPayment: (visitId: number, amount: number, note?: string, method?: string) => { addPayment(db, visitId, amount, note, method); return true },
       updateBill: (visitId: number, total: number, discount: number, pin?: string) => { requirePin(db, pin); updateBill(db, visitId, total, discount) },
       cancel: (visitId: number, reason: string, pin?: string) => {
         requirePin(db, pin)

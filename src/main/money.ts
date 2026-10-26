@@ -187,11 +187,12 @@ const prevDay = (d: string) => {
 }
 
 export function cashDay(db: Db, date: string = localDate(clock.now())): CashDay {
-  // opening = the last counted cash before this day, plus the cash that came and went on days nobody closed
+  // opening = the last counted cash before this day, plus the cash that came and went on days nobody closed (none if no day was ever closed)
   const last = db.get<{ date: string; counted: number }>('SELECT date, counted FROM cash_closings WHERE date < ? ORDER BY date DESC LIMIT 1', date)
-  const gapFrom = last ? localDate(new Date(new Date(`${last.date}T00:00:00`).getTime() + 86_400_000)) : '0000-01-01'
+  // before the first closing there is nothing to carry over: the drawer starts from what the owner counts at the first closing
+  const gapFrom = last ? localDate(new Date(new Date(`${last.date}T00:00:00`).getTime() + 86_400_000)) : ''
   const gapTo = prevDay(date)
-  const opening = round2((last?.counted ?? 0) + (gapFrom <= gapTo ? dayPaid(db, gapFrom, gapTo, 'cash') - dayExpenses(db, gapFrom, gapTo) : 0))
+  const opening = last ? round2(last.counted + (gapFrom <= gapTo ? dayPaid(db, gapFrom, gapTo, 'cash') - dayExpenses(db, gapFrom, gapTo) : 0)) : 0
   const by = (m: string) => round2(dayPaid(db, date, date, m))
   const expenses = listExpenses(db, date, date)
   const expensesTotal = round2(expenses.reduce((a, e) => a + e.amount, 0))

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DuplicatesTab, MergeButton } from './Duplicates'
 import { EditPatientButton } from './EditPatient'
 import { formatAge } from '../../shared/age'
 import { api, fmtDate, money, useApp, useAsync } from '../ui'
@@ -6,7 +7,7 @@ import { VisitTable } from './Today'
 
 export function Patients({ patientId }: { patientId?: number }) {
   const { t } = useApp()
-  const [tab, setTab] = useState<'people' | 'visits'>('people')
+  const [tab, setTab] = useState<'people' | 'visits' | 'dups'>('people')
   if (patientId) return <PatientPage id={patientId} />
   return (
     <div className="page" data-testid="patients">
@@ -14,8 +15,9 @@ export function Patients({ patientId }: { patientId?: number }) {
       <div className="tabs">
         <button className={`tab${tab === 'people' ? ' on' : ''}`} onClick={() => setTab('people')}>{t('Find a person')}</button>
         <button className={`tab${tab === 'visits' ? ' on' : ''}`} onClick={() => setTab('visits')} data-testid="tab-visits">{t('All visits by date / doctor')}</button>
+        <button className={`tab${tab === 'dups' ? ' on' : ''}`} onClick={() => setTab('dups')} data-testid="tab-dups">{t('Possible duplicates')}</button>
       </div>
-      {tab === 'people' ? <People /> : <Visits />}
+      {tab === 'people' ? <People /> : tab === 'visits' ? <Visits /> : <DuplicatesTab />}
     </div>
   )
 }
@@ -103,6 +105,7 @@ function PatientPage({ id }: { id: number }) {
         </div>
         <button className="btn big" onClick={() => go({ name: 'new', personId: id })} data-testid="new-visit">➕ {t('New visit for this person')}</button>
         <EditPatientButton patientId={id} onSaved={p.reload} />
+        <MergeButton person={{ id, title: x.title, name: x.name, sex: x.sex, phone: x.phone, village: x.village ?? '', source: x.source, visits: visits.data?.length ?? 0, lastVisit: null }} onDone={() => { p.reload(); visits.reload() }} />
       </div>
       {total > 0 && <div className="alert warn"><b>{t('Dues')}</b><span>{money(total)}</span></div>}
       <div className="card">
