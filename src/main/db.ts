@@ -162,6 +162,30 @@ ALTER TABLE visits ADD COLUMN pulse INTEGER;
 ALTER TABLE visits ADD COLUMN temp_f REAL;
 ALTER TABLE visits ADD COLUMN spo2 INTEGER;
 `
+  },
+  {
+    id: 3,
+    name: 'commission, packages, payment method, expenses, cash closing',
+    sql: `
+ALTER TABLE doctors ADD COLUMN commission_pct REAL NOT NULL DEFAULT 0;
+ALTER TABLE visits ADD COLUMN commission_pct REAL;
+ALTER TABLE visits ADD COLUMN package_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE payments ADD COLUMN method TEXT NOT NULL DEFAULT 'cash';
+CREATE TABLE doctor_payouts(
+  id INTEGER PRIMARY KEY, doctor TEXT NOT NULL COLLATE NOCASE, month TEXT NOT NULL, amount REAL NOT NULL,
+  paid_at TEXT NOT NULL, note TEXT NOT NULL DEFAULT '');
+CREATE INDEX ix_payout_doctor ON doctor_payouts(doctor, month);
+CREATE TABLE packages(
+  id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE COLLATE NOCASE, price REAL NOT NULL DEFAULT 0,
+  panel_codes TEXT NOT NULL DEFAULT '[]', active INTEGER NOT NULL DEFAULT 1, sort INTEGER NOT NULL DEFAULT 0);
+CREATE TABLE expenses(
+  id INTEGER PRIMARY KEY, date TEXT NOT NULL, category TEXT NOT NULL, amount REAL NOT NULL, note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL);
+CREATE INDEX ix_expenses_date ON expenses(date);
+CREATE TABLE cash_closings(
+  date TEXT PRIMARY KEY, opening REAL NOT NULL, expected REAL NOT NULL, counted REAL NOT NULL, note TEXT NOT NULL DEFAULT '',
+  closed_at TEXT NOT NULL);
+`
   }
 ]
 

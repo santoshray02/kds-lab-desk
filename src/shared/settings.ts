@@ -33,6 +33,39 @@ export interface Settings {
   reportTrends: boolean
   /** how out-of-range results look on the printed report: standard = red values, pink rows and a summary box; gentle = bold with H/L, red only for critical; plain = bold with H/L, no colour */
   abnormalStyle: 'standard' | 'gentle' | 'plain'
+  /** the bill / receipt printed for the patient */
+  receipt: {
+    /** 'a4' prints the receipt on the top of a normal sheet; 'thermal' fits a narrow roll printer */
+    style: 'a4' | 'thermal'
+    thermalWidthMm: number
+    footer: string
+    /** print the receipt by itself when a new patient is saved */
+    autoPrint: boolean
+  }
+  /** sticker labels for sample tubes */
+  labels: {
+    enabled: boolean
+    widthMm: number
+    heightMm: number
+    /** stickers per visit (one per tube) */
+    copies: number
+    code: 'barcode' | 'qr'
+    showAge: boolean
+    showTests: boolean
+    autoPrint: boolean
+  }
+  /** owner's money tools */
+  money: {
+    /** referral commission for doctors */
+    commission: boolean
+    /** commission on the bill amount, or only on money actually received */
+    commissionBasis: 'billed' | 'collected'
+    /** expenses and daily cash closing */
+    expenses: boolean
+    expenseCategories: string[]
+  }
+  /** one-click health packages on the registration screen */
+  packages: boolean
   /** print the height, weight, blood pressure etc. on the report when they were taken */
   reportVitals: boolean
   /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
@@ -91,6 +124,10 @@ export const DEFAULT_SETTINGS: Settings = {
   waBuiltin: false,
   reportTrends: true,
   abnormalStyle: 'gentle',
+  receipt: { style: 'a4', thermalWidthMm: 80, footer: 'Thank you. Get well soon.', autoPrint: false },
+  labels: { enabled: true, widthMm: 50, heightMm: 25, copies: 2, code: 'barcode', showAge: true, showTests: false, autoPrint: false },
+  money: { commission: true, commissionBasis: 'billed', expenses: true, expenseCategories: ['Reagents & kits', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other'] },
+  packages: true,
   reportVitals: false,
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',

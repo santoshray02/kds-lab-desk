@@ -19,7 +19,15 @@ export interface NewVisitInput {
   notes?: string
   date?: string
   vitals?: Vitals
+  /** how the money paid now was received */
+  payMethod?: PayMethod
+  /** name of the health package the tests were chosen from (printed on the bill) */
+  package?: string
 }
+
+export type PayMethod = 'cash' | 'upi' | 'card' | 'other'
+export const PAY_METHODS: PayMethod[] = ['cash', 'upi', 'card', 'other']
+const methodOf = (m: string | undefined): PayMethod => (PAY_METHODS.includes(m as PayMethod) ? (m as PayMethod) : 'cash')
 
 export function vitalsOf(row: any): Vitals {
   return { heightCm: row.height_cm ?? null, weightKg: row.weight_kg ?? null, bpSys: row.bp_sys ?? null, bpDia: row.bp_dia ?? null, pulse: row.pulse ?? null, tempF: row.temp_f ?? null, spo2: row.spo2 ?? null }
@@ -74,18 +82,21 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
     const discount = Math.max(0, input.discount ?? 0)
     const total = Math.max(0, gross - discount)
     const visitId = db.run(
-      `INSERT INTO visits(patient_id, sample_id, visit_date, age_y, age_m, age_d, doctor, specimen, total, discount, notes, created_at)
-       VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO visits(patient_id, sample_id, visit_date, age_y, age_m, age_d, doctor, specimen, total, discount, notes, created_at, package_name)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       patientId, sampleId, input.date ?? localDate(now), input.age.years, input.age.months, input.age.days, doctor,
-      specimens.join(', ') || 'Blood', total, discount, input.notes ?? '', nowIso()
+      specimens.join(', ') || 'Blood', total, discount, input.notes ?? '', nowIso(), (input.package ?? '').trim()
     ).lastId
     db.run(`UPDATE visits SET ${VITALS_SET} WHERE id = ?`, ...vitalsArgs(vit), visitId)
     panels.forEach((p, i) => {
       db.run('INSERT INTO visit_tests(visit_id, panel_id, panel_code, name, price, sent_out) VALUES(?,?,?,?,?,?)', visitId, p.id, p.code, p.name, prices[i], p.sent_out)
     })
     touchDoctor(db, doctor)
+    // a rate that is set today is kept with the visit, so changing it later does not rewrite old months (visits with no rate follow the doctor's current rate)
+    const rate = db.get<{ commission_pct: number }>('SELECT commission_pct FROM doctors WHERE name = ?', doctor)?.commission_pct ?? 0
+    if (rate > 0 && doctor.toLowerCase() !== 'self') db.run('UPDATE visits SET commission_pct = ? WHERE id = ?', rate, visitId)
     if (input.paid && input.paid > 0) {
-      db.run('INSERT INTO payments(visit_id, amount, paid_at, note) VALUES(?,?,?,?)', visitId, Math.min(input.paid, total), nowIso(), 'At registration')
+      db.run('INSERT INTO payments(visit_id, amount, paid_at, note, method) VALUES(?,?,?,?,?)', visitId, Math.min(input.paid, total), nowIso(), 'At registration', methodOf(input.payMethod))
     }
     // an in-house report is needed unless every test is sent out
     if (panels.some((p) => !p.sent_out)) {
@@ -101,9 +112,9 @@ export function paidTotal(db: Db, visitId: number): number {
   return db.get<{ s: number | null }>('SELECT SUM(amount) AS s FROM payments WHERE visit_id = ?', visitId)?.s ?? 0
 }
 
-export function addPayment(db: Db, visitId: number, amount: number, note = ''): void {
+export function addPayment(db: Db, visitId: number, amount: number, note = '', method?: string): void {
   if (!(amount > 0)) throw new Error('Amount must be more than zero')
-  db.run('INSERT INTO payments(visit_id, amount, paid_at, note) VALUES(?,?,?,?)', visitId, amount, nowIso(), note)
+  db.run('INSERT INTO payments(visit_id, amount, paid_at, note, method) VALUES(?,?,?,?,?)', visitId, amount, nowIso(), note, methodOf(method))
   audit(db, 'payment.add', 'visits', visitId, String(amount))
   enqueue(db, 'visit', visitId)
 }

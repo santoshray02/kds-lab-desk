@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",
+    "bwip-js": "^4.11.4",
     "cfb": "^1.2.2",
     "electron-updater": "^6.8.11",
     "fflate": "^0.8.3",
