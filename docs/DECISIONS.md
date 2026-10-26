@@ -118,7 +118,7 @@ with the reason, so the doctor or a helper can change it later.
 * No other lab's report is generated or imitated; sent-out tests are logged and the received PDF is attached as is.
 
 ## Auto-update via GitHub Releases
-* Updates come from the **public** repo `santoshray02/kds-lab-desk-releases` (installers only, no code or patient data). The app uses electron-updater's generic provider on `https://github.com/santoshray02/kds-lab-desk-releases/releases/latest/download`, so no token is needed. Updates are on by default and can be changed in Settings → Data & updates.
+* Updates come from the **public** repo `santoshray02/kds-lab-desk` (GitHub Releases: `KDS-Lab-Desk-Setup.exe`, `.blockmap`, `latest.yml`). It started as a separate installers-only repo while the code was private; once the code went open source (MIT) the two were merged. The app uses electron-updater's generic provider on `releases/latest/download`.
 * The installer is now named `KDS-Lab-Desk-Setup.exe` (hyphens): GitHub turns spaces in asset names into dots, which would break the file name in `latest.yml`. The shortcut is still called "KDS Lab Desk". This changes the name given in CLAUDE.md on purpose.
 * Publishing stays manual (no token on the PC): see `docs/RELEASING.md`.
 

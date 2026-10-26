@@ -33,5 +33,5 @@ nsis:
 publish:
   provider: github
   owner: santoshray02
-  repo: kds-lab-desk-releases
+  repo: kds-lab-desk
   releaseType: release
