@@ -18,3 +18,6 @@ gateway/gateway.log*
 promo/
 *.pem
 KDS-licence-keys/
+
+# Google Drive sign-in secret (see docs/GOOGLE-DRIVE-SETUP.md)
+src/shared/google.local.json

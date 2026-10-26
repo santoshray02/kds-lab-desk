@@ -23,7 +23,7 @@ Until then the Backup screen says "Google Drive backup is not set up in this ver
    With only these low-risk scopes Google should not ask for a security review. If it shows "Needs verification", follow its prompts (a homepage and a privacy page are what it checks).
 6. **Clients → Create client**, type **Desktop app**, name "KDS Lab Desk Windows". Copy the **Client ID** and **Client secret**.
    (For installed desktop apps Google says the secret is not confidential, so it may sit in open-source code.)
-7. Paste them into `src/shared/googleConfig.ts`, run the tests, build, and release.
+7. Put the Client ID in `src/shared/googleConfig.ts` (it is public) and the secret in `src/shared/google.local.json` (copy `google.local.example.json`; this file is git-ignored so GitHub's secret scanner stays quiet, and is bundled into the installer when you build). Run the tests, build, and release. The privacy and terms pages for the consent screen are `https://santoshray.in/privacy` and `https://santoshray.in/terms`.
 8. Test with your own Google account: Backup → Connect → press "Back up now" → Restore from Google Drive shows the copy → restore on a second PC.
 
 ## Privacy-policy page (needed for step 4)
