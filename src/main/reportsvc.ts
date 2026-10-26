@@ -31,15 +31,12 @@ export function qrTarget(db: Db, reportId: number, data?: ReportData): { text: s
   const code = verifyCode(d)
   const link = reportLink(db, reportId)
   if (link) return { text: link, caption: 'Scan to verify this report online', code }
+  // kept short on purpose: fewer characters means bigger squares, which scan from a phone even off a poor printout
   const text = [
     d.lab.name,
-    `Report ${d.sampleId}${d.version > 1 ? ` (version ${d.version})` : ''}`,
-    `Patient: ${d.title ? d.title + '. ' : ''}${d.patientName}`,
-    `Age/Sex: ${d.ageText} / ${d.sexText}`,
-    `Date: ${d.dateText}`,
-    d.watermark ? `Status: ${d.watermark}` : `Signed: ${d.lab.doctorName}`,
-    `Verify code: ${code}`,
-    'Not valid for medico legal purpose.'
+    `Report ${d.sampleId}${d.version > 1 ? ` v${d.version}` : ''}${d.watermark ? ` (${d.watermark})` : ''}`,
+    `${d.title ? d.title + '. ' : ''}${d.patientName.slice(0, 40)}`,
+    `Verify: ${code}`
   ].join('\n')
   return { text, caption: 'Scan for report details', code }
 }
@@ -47,7 +44,7 @@ export function qrTarget(db: Db, reportId: number, data?: ReportData): { text: s
 export async function reportHtml(db: Db, reportId: number): Promise<string> {
   const data = buildReportData(db, reportId)
   const q = qrTarget(db, reportId, data)
-  data.qrSvg = await QRCode.toString(q.text, { type: 'svg', margin: 0, errorCorrectionLevel: 'M' })
+  data.qrSvg = await QRCode.toString(q.text, { type: 'svg', margin: 0, errorCorrectionLevel: 'L' })
   data.qrCaption = q.caption
   data.verifyCode = q.code
   return renderReportHtml(data)

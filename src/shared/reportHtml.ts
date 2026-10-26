@@ -231,8 +231,8 @@ table.grid td.ant,table.grid th.ant{text-align:left}
 .foot .sig i{display:block;border-top:1px solid var(--ink);margin-bottom:2px}
 .foot .sig small{display:block;font-weight:400;font-size:9pt;color:var(--mut)}
 .foot .mid{text-align:center;flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;color:var(--mut);font-size:8pt}
-.foot .qr{width:21mm;height:21mm;padding:1mm;border:1px solid var(--line);border-radius:3px;background:#fff}
-.foot .qr svg{width:100%;height:100%;display:block}
+.foot .qr{width:27mm;height:27mm;padding:3mm;border:1px solid var(--line);border-radius:3px;background:#fff}
+.foot .qr svg{width:100%;height:100%;display:block;shape-rendering:crispEdges}
 .foot .code{font:600 8.5pt "Consolas","Courier New",monospace;color:var(--ink);letter-spacing:.05em}
 .disc{text-align:center;font-size:8.5pt;color:var(--mut);margin-top:3px}
 .wm{position:fixed;top:45%;left:0;right:0;text-align:center;font:800 70pt/1 Arial,sans-serif;color:rgba(0,0,0,.07);transform:rotate(-25deg);pointer-events:none;z-index:-1}

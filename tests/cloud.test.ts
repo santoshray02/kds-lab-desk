@@ -179,8 +179,8 @@ describe('report link, QR and WhatsApp level', () => {
     expect(reportLink(db, a.reportId)).toBeNull()
     const off = qrTarget(db, a.reportId)
     expect(off.text).toContain(`Report ${a.sampleId}`)
-    expect(off.text).toContain('Patient: ')
-    expect(off.text).toContain(`Verify code: ${off.code}`)
+    expect(off.text).toContain('Qr Person')
+    expect(off.text).toContain(`Verify: ${off.code}`)
     expect(off.code).toMatch(/^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$/)
     enable()
     const code = db.get<{ share_code: string }>('SELECT share_code FROM reports WHERE id = ?', a.reportId)!.share_code

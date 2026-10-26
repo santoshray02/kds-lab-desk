@@ -166,3 +166,8 @@ with the reason, so the doctor or a helper can change it later.
 * **Gentle:** abnormal values are bold with H or L; no pink rows, no red summary box; gauge marker and trend dot use the heading blue. Only values marked **critical** keep red text, so a dangerous result is never hidden.
 * **Plain:** same, with no red anywhere (also prints well on a black-and-white printer).
 * The flag letters, the bold type and the critical warning on the entry screen are unchanged; only the printed colours change. Old reports re-print in the style chosen at that moment, because the style is a print setting, not part of the report data.
+
+## QR code that scans (1.5.0)
+* Complaint: the QR on the report would not scan. Cause: the offline QR held about 190 characters in a 21 mm square, so the squares were tiny and failed at ordinary print/screen resolution (confirmed by decoding test renders).
+* Now: only lab name, sample ID (and version), patient name and the verify code (about 80 characters), error correction L, printed 27 mm with a wider white border and crisp edges. Test renders decode even at 78 px. When cloud is on it still holds only the short report link.
+* Age, sex, date, signer and the disclaimer were removed from the QR; they are printed on the report itself.
