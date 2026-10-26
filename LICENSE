@@ -1,35 +1,36 @@
-Copyright (c) 2026 K.D.S. Pathology, Dalsingsarai, Samastipur, Bihar, India. All rights reserved.
+MIT License
 
-KDS Lab Desk is proprietary software owned by K.D.S. Pathology ("the Owner").
-The source code is private. Nothing in this file gives anyone a right to the
-source code, and it may not be copied, modified or published without the
-written permission of the Owner.
+Copyright (c) 2026 Santosh Ray
 
-USING THE PROGRAM (the installer "KDS-Lab-Desk-Setup.exe")
-1. Free plan. The Owner allows any laboratory to install and use the unmodified
-   program, free of charge, to approve up to 100 reports in each calendar month.
-2. Licence. To approve more than that, the laboratory needs a licence code
-   issued by the Owner. The Owner may charge for a licence and may set its
-   limit and expiry date. K.D.S. Pathology holds an unlimited licence.
-3. The program must not be modified, reverse engineered, or have its limit or
-   licence check removed or bypassed, and it must not be sold, rented or
-   redistributed except by the Owner.
-4. Reports already approved can always be opened, printed and sent, whatever
-   the plan.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THIRD-PARTY COMPONENTS
-The program includes third-party components (for example Electron, Chromium,
-pdf.js, qrcode, fflate, cfb, electron-updater, pino and Baileys). Each is
-provided under its own open-source licence, which continues to apply to that
-component. Their notices are included with the installed program (for example
-LICENSE.electron.txt and LICENSES.chromium.html) and in each package's own
-folder.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-NO WARRANTY
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED. Reports produced by it must be checked and approved by the
-responsible doctor before they are issued to a patient. The Owner is not liable
-for any loss arising from its use.
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-This text is a plain working draft. Have a lawyer review it before the program
-is given to other laboratories or any money is charged.
+---
+
+Additional notes (not part of the licence grant):
+
+* This is a reporting tool, not a medical device. Every report must be checked
+  and approved by the responsible doctor before it is given to a patient. The
+  default test ranges are starting values that the laboratory's doctor must
+  review.
+* The name "K.D.S. Pathology" and its logo identify a real laboratory and are
+  not licensed for use by others. Replace them with your own in Settings.
+* Third-party components (for example Electron, Chromium, pdf.js, qrcode,
+  fflate, cfb, electron-updater, pino and Baileys) keep their own licences.
+  Baileys is an unofficial WhatsApp Web library; using it may breach
+  WhatsApp's terms, and you use it at your own risk.

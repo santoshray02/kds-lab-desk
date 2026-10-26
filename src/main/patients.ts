@@ -1,7 +1,7 @@
-import { audit, enqueue, nowIso, type Db } from './db'
+import { audit, clock, enqueue, nowIso, type Db } from './db'
 import type { Sex } from '../shared/types'
 
-export const clock = { now: () => new Date() }
+export { clock }
 
 export function localDate(d: Date = clock.now()): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')

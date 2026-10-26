@@ -18,7 +18,6 @@ export function Today() {
   const open = pending.data?.unreported.filter((p) => p.date !== todayStr()) ?? []
 
   const daysSincePen = settings.lastPenDriveBackup ? Math.floor((Date.now() - new Date(settings.lastPenDriveBackup).getTime()) / 86400000) : null
-  const lic = useAsync(() => api.license.status(), [])
   const penDue = daysSincePen === null || daysSincePen >= settings.penDriveReminderDays
 
   return (
@@ -27,14 +26,6 @@ export function Today() {
         <h1 className="grow">{t('Today')} <span className="muted" style={{ fontSize: 18 }}>{fmtDate(todayStr())}</span></h1>
         <button className="btn big" onClick={() => go({ name: 'new' })} data-testid="new-btn">➕ {t('New patient')}</button>
       </div>
-
-      {lic.data?.message && (
-        <div className={`banner${lic.data.blocked ? ' bad' : ''}`} data-testid="licence-banner">
-          <b>{lic.data.blocked ? '⛔' : 'ℹ'} {lic.data.blocked ? t('Free limit reached') : t('Free reports')}</b>
-          <span>{lic.data.message}</span>
-          <button className="btn small" onClick={() => go({ name: 'settings' })}>{t('Licence')}</button>
-        </div>
-      )}
 
       {!settings.masterReviewed && (
         <div className="banner" data-testid="review-banner">

@@ -21,7 +21,6 @@ import {
   type NewVisitInput, type VisitFilter
 } from './visits'
 import { builtinLink, builtinResume, builtinStatus, builtinUnlink, initBuiltin, sendAutomatically } from './whatsapp'
-import { activateLicense, initLicensing, licenseStatus, removeLicense } from './licensing'
 import { autoSendIfEnabled, autoSendStatus, buildWaPlan, copyFileToClipboard, sendViaEvolution, testEvolution } from './whatsapp'
 import { seedDemo, clearDemo } from './demo'
 import { runImport, importLog, type ImportProgress } from './importer/run'
@@ -62,7 +61,6 @@ export function makeHandlers(ctx: Ctx) {
   const pdfOf = (reportId: number) => ensurePdf(db, ctx.dataDir, reportId, htmlToPdf, pdfWriter)
   setPdfProvider(pdfOf)
   initBuiltin(ctx.dataDir)
-  initLicensing(ctx.dataDir)
   setTimeout(() => builtinResume(db), 8000) // reconnect a linked WhatsApp a few seconds after start
   /** Level A: copy the PDF to the clipboard; then open the chat in the browser or in the desktop app. */
   const openChat = async (plan: ReturnType<typeof buildWaPlan>, pdf: string, target: 'web' | 'app' | 'evolution') => {
@@ -226,12 +224,6 @@ export function makeHandlers(ctx: Ctx) {
         return true
       },
       link: (reportId: number) => reportLink(db, reportId)
-    },
-
-    license: {
-      status: () => licenseStatus(db),
-      activate: (code: string, pin?: string) => { requirePin(db, pin); return activateLicense(db, code) },
-      remove: (pin?: string) => { requirePin(db, pin); return removeLicense(db) }
     },
 
     whatsapp: {

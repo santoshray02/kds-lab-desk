@@ -144,10 +144,10 @@ with the reason, so the doctor or a helper can change it later.
 * The WhatsApp login (`whatsapp-auth/`) lives in the app data folder and is deliberately **not** in backups or the cloud (it is a credential). After restoring on a new PC, link again.
 * Verified: unit tests with a fake WhatsApp; the **packaged** app starts the link and shows a real QR from WhatsApp's servers. Not verified: scanning it with a phone and sending to a real number.
 
-## Free plan and licence codes
-* **Free up to 100 approved reports a month** (calendar month, first approvals only: corrections, demo and imported data are never counted). More needs a licence code. K.D.S. Pathology holds an unlimited licence. Contact shown to users: rayskumar02@gmail.com.
-* **At the limit only approving NEW reports pauses.** Opening, printing, searching, sending, correcting and backing up stay available: patient data is never held hostage.
-* **Licence = one line of text** `KDS1.<details>.<signature>`, Ed25519-signed, checked offline with the public key in `src/main/licensing.ts`. Details: id, licensee, plan (`unlimited` or `monthly` + limit), optional expiry (an expired licence falls back to the free plan), issue date.
-* **The private key lives outside the project** (`C:\Users\Santosh\KDS-licence-keys\private.pem`; `*.pem` is git-ignored). It must be backed up and never shared or committed: losing it means new keys and re-issued licences; leaking it means anyone can make licences. Make codes with `node tools/license-tool.mjs issue --licensee "Lab" --plan monthly --limit 500 [--expires 2027-10-31]`.
-* **The counter is a deterrent, not a vault.** It is kept in the database and in a signed `usage.dat` file, so deleting only one does not reset it. A determined person who deletes the whole data folder or patches the program can bypass it.
-* `LICENSE` file updated with the free-tier terms; it is a plain draft that needs a lawyer's review before other labs use it or money is charged.
+## Free and open source (replaces the free plan and licence codes)
+* **Why:** the code is going public, so any usage cap or licence check could simply be deleted. Keeping a limit that cannot be enforced only annoys honest users. The plan is free software with paid set-up, training and support, plus consulting, as personal branding.
+* **Removed:** the 100-reports-a-month cap, signed licence codes, the Licence screen and banner, the licence tool and its tests. Version 1.3.0.
+* **Licence:** MIT, with a note that it is not a medical device, that the K.D.S. Pathology name and logo are not licensed, and that Baileys is unofficial. A lawyer should still review it.
+* Copies that had a licence saved keep an unused `_license` setting; it does nothing.
+* Earlier history of this decision is in git (commit 1fb4975 and 2479614).
+

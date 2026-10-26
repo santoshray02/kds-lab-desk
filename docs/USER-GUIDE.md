@@ -178,10 +178,8 @@ Press **Print this page** to print any of these.
 
 ---
 
-## Licence (free plan)
+## Cost
 
-The program is **free for up to 100 approved reports each month**. Settings → **Licence** shows how many are used.
-At the limit you can still open, print, search and send old reports; only approving a *new* report waits until the 1st of the next month or until you enter a licence code.
-To get a licence code, contact K.D.S. Pathology (rayskumar02@gmail.com). Paste the code in Settings → Licence → **Save licence**.
+KDS Lab Desk is **free and open source** (MIT licence). There is no limit on reports and no licence code. If you want help with set-up, training or support, contact rayskumar02@gmail.com (santoshray.in).
 
-**हिंदी में:** हर महीने 100 रिपोर्ट मुफ़्त हैं। सीमा पूरी होने पर पुरानी रिपोर्ट खुलती और छपती रहती हैं, सिर्फ़ नई रिपोर्ट मंज़ूर करना रुकता है। लाइसेंस कोड के लिए संपर्क करें और उसे Settings → Licence में चिपकाएँ।
+**हिंदी में:** यह सॉफ़्टवेयर पूरी तरह मुफ़्त है। रिपोर्ट की कोई सीमा नहीं, कोई लाइसेंस कोड नहीं। सेट-अप या सहायता के लिए rayskumar02@gmail.com पर संपर्क करें।

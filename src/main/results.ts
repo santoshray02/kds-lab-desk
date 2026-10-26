@@ -6,7 +6,6 @@ import type { ReportData, ReportPanel, ReportRow, ReportSection } from '../share
 import type { Issue, PanelDef, ResultMap, Sex } from '../shared/types'
 import { audit, enqueue, nowIso, type Db } from './db'
 import { loadMaster } from './master'
-import { canApprove, recordApproval } from './licensing'
 import { getSettings, checkApprover, checkPin, hasPin } from './settings'
 
 export class AppError extends Error {
@@ -182,8 +181,6 @@ export function approveReport(
   if (!checkApprover(db, opts.pin)) throw new AppError('PIN', 'Wrong PIN')
 
   const { v, sex, ageDays } = visitContext(db, rep.visit_id)
-  const lic = canApprove(db, v.source, rep.version)
-  if (!lic.ok) throw new AppError('LICENSE', lic.message)
   const panels = visitPanels(db, rep.visit_id)
   const typed = storedTyped(db, reportId)
   const res = resolveResults(panels, typed, sex, ageDays, { previous: previousValues(db, v.pid, rep.visit_id), refDate: v.visit_date })
@@ -214,7 +211,6 @@ export function approveReport(
     enqueue(db, 'report', reportId)
   })
   const code = db.get<{ share_code: string }>('SELECT share_code FROM reports WHERE id = ?', reportId)!.share_code
-  if (rep.version === 1 && v.source === 'app') recordApproval(db)
   return { reportId, visitId: rep.visit_id, shareCode: code }
 }
 

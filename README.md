@@ -43,3 +43,7 @@ tools/import   the original Python extractors (reference; the app uses the TypeS
 ```
 
 **No real patient data is kept in this repository.** `docs/reference/` and all data folders are git-ignored.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE). Free to use, change and share. It is not a medical device: the laboratory's doctor must review the default ranges and approve every report.

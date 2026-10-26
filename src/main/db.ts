@@ -170,7 +170,9 @@ export function openDb(path: string): Db {
   return db
 }
 
-export const nowIso = () => new Date().toISOString()
+/** The app's clock; tests replace `now` so dates stay fixed. */
+export const clock = { now: () => new Date() }
+export const nowIso = () => clock.now().toISOString()
 
 export function audit(db: Db, action: string, entity = '', entityId: number | null = null, detail = '', actor = ''): void {
   db.run('INSERT INTO audit_log(at, actor, action, entity, entity_id, detail) VALUES(?,?,?,?,?,?)', nowIso(), actor, action, entity, entityId, detail)
