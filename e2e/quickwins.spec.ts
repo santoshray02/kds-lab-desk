@@ -189,6 +189,16 @@ test('home collection: register with an address, see it on Today, mark collected
     await page.getByTestId('paid').fill('100')
     await page.getByTestId('save-visit').click()
 
+    // print preview: the receipt and the stickers can be looked at before anything is printed
+    await page.getByTestId('print-receipt').click()
+    await expect(page.getByTestId('print-preview').frameLocator('iframe').getByText('RECEIPT')).toBeVisible()
+    await expect(page.getByTestId('print-preview').frameLocator('iframe').getByText('Home collection charge')).toBeVisible()
+    await page.getByRole('button', { name: 'Close' }).click()
+    await page.getByTestId('print-labels').click()
+    await expect(page.getByTestId('print-preview').frameLocator('iframe').getByText('Hema Home')).toHaveCount(2) // two stickers
+    await page.getByRole('button', { name: 'Close' }).click()
+    await expect(page.getByTestId('print-preview')).toHaveCount(0)
+
     await expect(page.getByTestId('home-info')).toContainText('Near the temple, Rampur')
     await expect(page.getByTestId('home-info')).toContainText('Not collected yet')
     await expect(page.getByTestId('bill-due')).toContainText('200')

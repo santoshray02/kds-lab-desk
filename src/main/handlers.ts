@@ -244,6 +244,7 @@ export function makeHandlers(ctx: Ctx) {
         await shell.openPath(file)
         return file
       },
+      labelsHtml: (visitId: number, copies?: number) => labelsHtml(db, visitId, copies),
       printLabels: async (visitId: number, copies?: number) => {
         const s = getSettings(db)
         await printHtml(await labelsHtml(db, visitId, copies), { silent: s.silentPrint, printerName: s.labels.printerName || s.printerName, paper: { widthMm: s.labels.widthMm, heightMm: s.labels.heightMm } })

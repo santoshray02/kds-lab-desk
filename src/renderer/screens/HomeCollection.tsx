@@ -1,16 +1,20 @@
+import { useState } from 'react'
+import { PrintPreview } from './PrintPreview'
 import { api, fmtDate, money, useApp, useAsync } from '../ui'
 
 /** Samples still to be collected at patients' homes. Shows nothing when there are none or the feature is off. */
 export function HomeJobs() {
   const { t, go, guard, toast, settings } = useApp()
+  const [preview, setPreview] = useState(false)
   const jobs = useAsync(() => (settings.home.enabled ? api.home.pending() : Promise.resolve([])), [settings.home.enabled])
   if (!jobs.data?.length) return null
   return (
     <div className="card" data-testid="home-jobs">
       <div className="row wrap">
         <h2 className="grow">🏠 {t('Home collections to do')} ({jobs.data.length})</h2>
-        <button className="btn ghost noprint" onClick={() => guard(api.home.printList())} data-testid="home-print">🖨 {t('Print the list for the collector')}</button>
+        <button className="btn ghost noprint" onClick={() => setPreview(true)} data-testid="home-print">🖨 {t('Print the list for the collector')}</button>
       </div>
+      {preview && <PrintPreview title={t('Home collection list')} load={() => api.home.listHtml()} widthMm={297} zoom={0.72} onPrint={() => api.home.printList()} onClose={() => setPreview(false)} />}
       <table className="t">
         <thead><tr><th>{t('Date')}</th><th>{t('Patient')}</th><th>{t('Address')}</th><th>{t('Time')}</th><th>{t('Tests')}</th><th className="num">{t('To collect')}</th><th /></tr></thead>
         <tbody>
