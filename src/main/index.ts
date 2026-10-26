@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { mkdirSync } from 'node:fs'
 import { audit, openDb } from './db'
 import { seedMaster } from './master'
+import { seedPackages } from './packages'
 import { driveBackupIfDue } from './cloudBackup'
 import { getDriveDeps, makeHandlers, runNightlyIfDue, type Ctx } from './handlers'
 import { AppError } from './results'
@@ -63,6 +64,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(null)
   const db = openDb(join(dataDir, 'kds.db'))
   seedMaster(db)
+  seedPackages(db)
   // Lost PIN: start the program once with --reset-pin (see docs/USER-GUIDE.md). Data is untouched; a new PIN can be set in Settings.
   if (process.argv.includes('--reset-pin')) {
     db.run("DELETE FROM settings WHERE key IN ('_pin_owner', '_pin_doctor')")

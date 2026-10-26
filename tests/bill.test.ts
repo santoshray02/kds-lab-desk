@@ -69,7 +69,7 @@ describe('receipt', () => {
   })
 
   it('follows the settings: thermal width, own footer, package name', () => {
-    setSettings(db, { receipt: { style: 'thermal', thermalWidthMm: 58, footer: 'Visit again', autoPrint: false } })
+    setSettings(db, { receipt: { style: 'thermal', thermalWidthMm: 58, footer: 'Visit again', printerName: '', autoPrint: false } })
     const v = visit({ package: 'Fever panel', paid: 260 })
     const h = receiptHtml(db, v.visitId)
     expect(h).toContain('size: 58mm')
@@ -106,7 +106,7 @@ describe('sample labels', () => {
     expect(h).toContain('Receipt Person')
     expect(h).toContain('lb bar')
     expect(h).not.toContain('CBC ESR') // tests are off by default
-    setSettings(db, { labels: { enabled: true, widthMm: 40, heightMm: 30, copies: 3, code: 'qr', showAge: false, showTests: true, autoPrint: false } })
+    setSettings(db, { labels: { enabled: true, widthMm: 40, heightMm: 30, copies: 3, code: 'qr', showAge: false, showTests: true, printerName: '', autoPrint: false } })
     const h2 = await labelsHtml(db, v.visitId)
     expect(h2).toContain('size: 40mm 30mm')
     expect(h2.match(/class="lb /g)).toHaveLength(3)

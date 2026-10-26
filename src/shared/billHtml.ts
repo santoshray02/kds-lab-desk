@@ -28,7 +28,8 @@ export interface ReceiptData {
 export function renderReceiptHtml(d: ReceiptData): string {
   const thermal = d.style === 'thermal'
   const w = Math.max(48, Math.min(110, d.thermalWidthMm))
-  const page = thermal ? `@page { size: ${w}mm 400mm; margin: 2mm 3mm }` : '@page { size: A4; margin: 12mm }'
+  // the margin is made with padding, not @page, so every print path gives the same result
+  const page = thermal ? `@page { size: ${w}mm 400mm; margin: 0 }` : '@page { size: A4; margin: 0 }'
   const contact = [d.lab.phone && `☎ ${esc(d.lab.phone)}`, d.lab.email && `✉ ${esc(d.lab.email)}`].filter(Boolean).join(' · ')
   const rows = d.items.map((i) => `<tr><td>${esc(i.name)}</td><td class="r">${inr(i.price)}</td></tr>`).join('')
   const pays = d.payments.length
@@ -38,7 +39,7 @@ export function renderReceiptHtml(d: ReceiptData): string {
 ${page}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{font:${thermal ? '9pt/1.35' : '10.5pt/1.45'} "Segoe UI","Noto Sans",Arial,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{padding:${thermal ? '2mm 3mm' : '12mm'};font:${thermal ? '9pt/1.35' : '10.5pt/1.45'} "Segoe UI","Noto Sans",Arial,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .rc{${thermal ? '' : 'width:130mm;border:1px solid #bbb;border-radius:6px;padding:7mm;'}}
 .lab{text-align:center;font-weight:800;font-size:${thermal ? '12pt' : '15pt'};letter-spacing:.03em}
 .sub{text-align:center;color:#444;font-size:${thermal ? '8pt' : '9pt'}}

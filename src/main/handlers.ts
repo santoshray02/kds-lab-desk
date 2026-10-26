@@ -1,5 +1,6 @@
 import { app, BrowserWindow, clipboard, dialog, safeStorage, shell } from 'electron'
 import { existsSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import type { Settings } from '../shared/settings'
 import type { Sex } from '../shared/types'
@@ -10,7 +11,12 @@ import { GOOGLE } from '../shared/googleConfig'
 import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBackup, validateBackup } from './backup'
 import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
-import { htmlToPdf, listPrinters, printHtml } from './electronBits'
+import { htmlToPdf, listPrinters, printHtml, type PaperSize } from './electronBits'
+import { labelsHtml, receiptHtml } from './bill'
+import { findDuplicates, mergePatients } from './dedupe'
+import { exportXlsx, EXPORT_SHEETS, type ExportOptions } from './exporter'
+import { addExpense, addPayout, cashDay, closeDay, commissionReport, deleteExpense, deletePayout, doctorRates, listExpenses, listPayouts, setDoctorCommission } from './money'
+import { listPackages, removePackage, savePackage } from './packages'
 import { editParam, loadMaster, rangeHistory, setPanelActive, setPanelPrice, setPanelSentOut, type ParamEdit } from './master'
 import { dayReport, insights, doctorMonthly, duesReport, pendingReport } from './owner'
 import type { Vitals } from '../shared/vitals'
@@ -54,6 +60,9 @@ export function getDriveDeps(dataDir: string): CloudDeps {
   }
   return driveDeps
 }
+
+/** The receipt as a sheet size: a narrow roll that grows with the bill, or the usual page. */
+const receiptPaper = (s: Settings): PaperSize => (s.receipt.style === 'thermal' ? { widthMm: s.receipt.thermalWidthMm, heightMm: 'auto' } : s.paper)
 
 export const nightlyDir = (dataDir: string) => join(dataDir, 'backups')
 
@@ -172,6 +181,96 @@ export function makeHandlers(ctx: Ctx) {
       update: (p: PatientInput, pin?: string) => {
         requirePin(db, pin)
         return updatePatient(db, p)
+      },
+      /** People who may be registered twice. */
+      duplicates: () => findDuplicates(db),
+      /** Join two records of one person (all visits go to `keepId`). */
+      merge: (keepId: number, dropId: number, pin?: string) => {
+        requirePin(db, pin)
+        return mergePatients(db, keepId, dropId)
+      }
+    },
+
+    packages: {
+      list: () => listPackages(db),
+      listAll: () => listPackages(db, { includeInactive: true }),
+      save: (p: { id?: number; name: string; price: number; panelCodes: string[]; active?: boolean }, pin?: string) => {
+        requirePin(db, pin)
+        return savePackage(db, p)
+      },
+      remove: (id: number, pin?: string) => {
+        requirePin(db, pin)
+        removePackage(db, id)
+        return true
+      }
+    },
+
+    /** Bill and sample stickers. */
+    bill: {
+      receiptHtml: (visitId: number) => receiptHtml(db, visitId),
+      printReceipt: async (visitId: number) => {
+        const s = getSettings(db)
+        await printHtml(receiptHtml(db, visitId), { silent: s.silentPrint, printerName: s.receipt.printerName || s.printerName, paper: receiptPaper(s) })
+        audit(db, 'receipt.print', 'visits', visitId)
+        return true
+      },
+      openReceiptPdf: async (visitId: number) => {
+        const s = getSettings(db)
+        const file = join(tmpdir(), `KDS-receipt-${visitId}.pdf`)
+        writeFileSync(file, await htmlToPdf(receiptHtml(db, visitId), receiptPaper(s)))
+        await shell.openPath(file)
+        return file
+      },
+      printLabels: async (visitId: number, copies?: number) => {
+        const s = getSettings(db)
+        await printHtml(await labelsHtml(db, visitId, copies), { silent: s.silentPrint, printerName: s.labels.printerName || s.printerName, paper: { widthMm: s.labels.widthMm, heightMm: s.labels.heightMm } })
+        audit(db, 'labels.print', 'visits', visitId)
+        return true
+      }
+    },
+
+    /** The owner's money: doctor commission, expenses, daily cash. */
+    money: {
+      rates: () => doctorRates(db),
+      setRate: (doctor: string, pct: number, pin?: string) => {
+        requirePin(db, pin)
+        setDoctorCommission(db, doctor, pct)
+        return true
+      },
+      commission: (month?: string) => commissionReport(db, month),
+      payouts: (month: string) => listPayouts(db, month),
+      addPayout: (p: { doctor: string; month: string; amount: number; note?: string }, pin?: string) => {
+        requirePin(db, pin)
+        return addPayout(db, p)
+      },
+      deletePayout: (id: number, pin?: string) => {
+        requirePin(db, pin)
+        deletePayout(db, id)
+        return true
+      },
+      expenses: (from: string, to: string) => listExpenses(db, from, to),
+      addExpense: (e: { date?: string; category: string; amount: number; note?: string }) => addExpense(db, e),
+      deleteExpense: (id: number, pin?: string) => {
+        requirePin(db, pin)
+        deleteExpense(db, id)
+        return true
+      },
+      cashDay: (date?: string) => cashDay(db, date),
+      closeDay: (date: string, counted: number, note?: string) => closeDay(db, date, counted, note ?? '')
+    },
+
+    /** Everything the owner or accountant may want in Excel. */
+    export: {
+      sheets: () => [...EXPORT_SHEETS],
+      xlsx: async (o: ExportOptions, pin?: string) => {
+        requirePin(db, pin)
+        const buf = exportXlsx(db, o)
+        const r = await dialog.showSaveDialog(ctx.win()!, { title: 'Save the Excel file', defaultPath: `KDS-records-${o.from}-to-${o.to}.xlsx`, filters: [{ name: 'Excel', extensions: ['xlsx'] }] })
+        if (r.canceled || !r.filePath) return null
+        writeFileSync(r.filePath, buf)
+        shell.showItemInFolder(r.filePath)
+        audit(db, 'export.xlsx', 'export', null, `${o.from}..${o.to}`)
+        return r.filePath
       }
     },
 
@@ -179,7 +278,7 @@ export function makeHandlers(ctx: Ctx) {
       create: (input: NewVisitInput) => createVisit(db, input),
       list: (f: VisitFilter) => listVisits(db, f),
       get: (id: number) => getVisit(db, id),
-      addPayment: (visitId: number, amount: number, note?: string) => addPayment(db, visitId, amount, note),
+      addPayment: (visitId: number, amount: number, note?: string, method?: string) => addPayment(db, visitId, amount, note, method),
       updateBill: (visitId: number, total: number, discount: number, pin?: string) => { requirePin(db, pin); updateBill(db, visitId, total, discount) },
       cancel: (visitId: number, reason: string, pin?: string) => {
         requirePin(db, pin)

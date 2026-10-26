@@ -39,6 +39,8 @@ export interface Settings {
     style: 'a4' | 'thermal'
     thermalWidthMm: number
     footer: string
+    /** blank = the printer chosen under Paper and printing */
+    printerName: string
     /** print the receipt by itself when a new patient is saved */
     autoPrint: boolean
   }
@@ -52,6 +54,8 @@ export interface Settings {
     code: 'barcode' | 'qr'
     showAge: boolean
     showTests: boolean
+    /** blank = the printer chosen under Paper and printing */
+    printerName: string
     autoPrint: boolean
   }
   /** owner's money tools */
@@ -124,8 +128,8 @@ export const DEFAULT_SETTINGS: Settings = {
   waBuiltin: false,
   reportTrends: true,
   abnormalStyle: 'gentle',
-  receipt: { style: 'a4', thermalWidthMm: 80, footer: 'Thank you. Get well soon.', autoPrint: false },
-  labels: { enabled: true, widthMm: 50, heightMm: 25, copies: 2, code: 'barcode', showAge: true, showTests: false, autoPrint: false },
+  receipt: { style: 'a4', thermalWidthMm: 80, footer: 'Thank you. Get well soon.', printerName: '', autoPrint: false },
+  labels: { enabled: true, widthMm: 50, heightMm: 25, copies: 2, code: 'barcode', showAge: true, showTests: false, printerName: '', autoPrint: false },
   money: { commission: true, commissionBasis: 'billed', expenses: true, expenseCategories: ['Reagents & kits', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other'] },
   packages: true,
   reportVitals: false,

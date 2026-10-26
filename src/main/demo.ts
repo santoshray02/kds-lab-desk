@@ -3,6 +3,7 @@ import { approveReport, getEntry, saveDraft } from './results'
 import { clock } from './patients'
 import { setSettings } from './settings'
 import { createVisit } from './visits'
+import { addExpense, setDoctorCommission } from './money'
 
 /** Small deterministic random generator so the demo data is the same every time. */
 function rng(seed: number) {
@@ -89,6 +90,8 @@ export function seedDemo(db: Db): { visits: number } {
   const real = saved()
   let n = 0
   try {
+    // sample commission rates, so the Doctor commission page has something to show
+    for (const [doc, pct] of [['Dr. A. Kumar', 10], ['Dr. S. Prasad', 15], ['Dr. M. Jha', 10]] as const) setDoctorCommission(db, doc, pct)
     PEOPLE.forEach((p, i) => {
       const d = new Date(real.getFullYear(), real.getMonth(), real.getDate() - p.daysAgo, 9 + (i % 6), 15)
       clock.now = () => d
@@ -101,7 +104,7 @@ export function seedDemo(db: Db): { visits: number } {
       })
       db.run("UPDATE patients SET source = 'demo' WHERE id = ?", r.patientId)
       db.run("UPDATE visits SET source = 'demo' WHERE id = ?", r.visitId)
-      db.run('UPDATE payments SET paid_at = ? WHERE visit_id = ?', d.toISOString(), r.visitId)
+      db.run('UPDATE payments SET paid_at = ?, method = ? WHERE visit_id = ?', d.toISOString(), i % 3 === 1 ? 'upi' : 'cash', r.visitId)
       n++
       // the most recent three visits stay un-reported so the worklist has something to show
       if (p.daysAgo === 0 && i > 0) return
@@ -116,6 +119,10 @@ export function seedDemo(db: Db): { visits: number } {
   } finally {
     clock.now = saved
   }
+  const day = (back: number) => { const x = new Date(real.getFullYear(), real.getMonth(), real.getDate() - back); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` }
+  addExpense(db, { date: day(0), category: 'Reagents & kits', amount: 450, note: 'Demo: CBC reagent' })
+  addExpense(db, { date: day(1), category: 'Transport', amount: 80, note: 'Demo: sample courier' })
+  addExpense(db, { date: day(3), category: 'Electricity', amount: 600, note: 'Demo: bill' })
   setSettings(db, { demoMode: true })
   audit(db, 'demo.seed', 'demo', null, String(n))
   return { visits: n }
@@ -129,6 +136,7 @@ export function clearDemo(db: Db): { visits: number } {
       db.run('DELETE FROM visits WHERE id = ?', id)
     }
     db.run("DELETE FROM patients WHERE source = 'demo'")
+    db.run("DELETE FROM expenses WHERE note LIKE 'Demo:%'")
     setSettings(db, { demoMode: false })
     audit(db, 'demo.clear', 'demo', null, String(ids.length))
   })
