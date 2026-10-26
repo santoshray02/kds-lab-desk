@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SETTINGS, type Settings } from '../../shared/settings'
+import { isUpiId } from '../../shared/upi'
 import { SECTION_ORDER } from '../../shared/masterData'
 import { api, Modal, money, useApp, useAsync } from '../ui'
 
-type Group = Pick<Settings, 'receipt' | 'labels' | 'money' | 'packages'>
-const pick = (s: Settings): Group => ({ receipt: s.receipt, labels: s.labels, money: s.money, packages: s.packages })
+type Group = Pick<Settings, 'receipt' | 'labels' | 'money' | 'packages' | 'payQr'>
+const pick = (s: Settings): Group => ({ receipt: s.receipt, labels: s.labels, money: s.money, packages: s.packages, payQr: s.payQr })
 const clampInt = (v: string, lo: number, hi: number) => Math.max(lo, Math.min(hi, parseInt(v.replace(/\D/g, ''), 10) || lo))
 
 /** Settings → Bills, stickers & money. Every option has a usual value and can be put back with one button. */
@@ -14,6 +15,7 @@ export function QuickSettings({ pin }: { pin?: string }) {
   const [printers, setPrinters] = useState<string[]>([])
   const [cats, setCats] = useState(settings.money.expenseCategories.join('\n'))
   useEffect(() => { api.app.printers().then(setPrinters).catch(() => undefined) }, [])
+  const upiBad = g.payQr.enabled && !isUpiId(g.payQr.upiId)
   const dirty = JSON.stringify(g) !== JSON.stringify(pick(settings)) || cats !== settings.money.expenseCategories.join('\n')
   const set = <K extends keyof Group>(k: K, patch: Partial<Group[K]> | Group[K]) => setG((x) => ({ ...x, [k]: typeof patch === 'object' ? { ...(x[k] as object), ...patch } : patch }) as Group)
 
@@ -81,6 +83,27 @@ export function QuickSettings({ pin }: { pin?: string }) {
         )}
       </div>
 
+      <div className="card col" data-testid="payqr-card">
+        <h2>▦ {t('Payment QR (UPI)')}</h2>
+        <label className="checkrow"><input type="checkbox" checked={g.payQr.enabled} onChange={(e) => set('payQr', { enabled: e.target.checked })} data-testid="payqr-enabled" /> {t('Let patients pay by scanning a UPI QR')}</label>
+        {g.payQr.enabled && (
+          <>
+            <div className="grid2">
+              <label className="f">{t('The lab’s UPI ID (like name@bank)')}<input className="input mono" value={g.payQr.upiId} onChange={(e) => set('payQr', { upiId: e.target.value.trim() })} placeholder="kdspathology@okaxis" data-testid="payqr-upi" aria-invalid={upiBad} /></label>
+              <label className="f">{t('Name patients see in their UPI app')}<input className="input" value={g.payQr.payeeName} onChange={(e) => set('payQr', { payeeName: e.target.value })} placeholder={settings.lab.name} data-testid="payqr-name" /></label>
+            </div>
+            {upiBad && <div className="alert warn"><b>⚠</b><span>{t('This UPI ID does not look right. It must look like name@bank.')}</span></div>}
+            <label className="f">{t('QR on the printed receipt')}
+              <select className="input" value={g.payQr.onReceipt} onChange={(e) => set('payQr', { onReceipt: e.target.value as Group['payQr']['onReceipt'] })} data-testid="payqr-receipt">
+                <option value="whenDue">{t('Only when something is still due')}</option><option value="always">{t('Always')}</option><option value="never">{t('Never (only on the screen)')}</option>
+              </select>
+            </label>
+            <label className="checkrow"><input type="checkbox" checked={g.payQr.withAmount} onChange={(e) => set('payQr', { withAmount: e.target.checked })} /> {t('Put the amount due inside the QR (the patient does not type it)')}</label>
+            <div className="muted" style={{ fontSize: 14 }}>{t('Best to use the lab’s business UPI ID. Some banks limit payments to a personal UPI ID. The program does not see whether a payment arrived: staff check their phone, then press “Payment received”.')}</div>
+          </>
+        )}
+      </div>
+
       <div className="card col">
         <h2>💰 {t('Money')}</h2>
         <label className="checkrow"><input type="checkbox" checked={g.money.commission} onChange={(e) => set('money', { commission: e.target.checked })} data-testid="money-commission" /> {t('Keep doctor commission (Reports → Doctor commission)')}</label>
@@ -98,7 +121,7 @@ export function QuickSettings({ pin }: { pin?: string }) {
       </div>
 
       <div className="row">
-        <button className="btn big" disabled={!dirty} onClick={save} data-testid="quick-save">{t('Save')}</button>
+        <button className="btn big" disabled={!dirty || upiBad} onClick={save} data-testid="quick-save">{t('Save')}</button>
         <button className="btn ghost" onClick={reset} data-testid="quick-reset">{t('Put the usual values back')}</button>
       </div>
 

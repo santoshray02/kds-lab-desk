@@ -58,6 +58,17 @@ export interface Settings {
     printerName: string
     autoPrint: boolean
   }
+  /** a UPI QR so patients can pay by scanning (the lab's own UPI ID; nothing is sent anywhere) */
+  payQr: {
+    enabled: boolean
+    upiId: string
+    /** name shown in the payer's UPI app; blank = the lab name */
+    payeeName: string
+    /** QR on the printed receipt: only when something is due, always, or never */
+    onReceipt: 'whenDue' | 'always' | 'never'
+    /** put the amount due into the QR (otherwise the payer types it) */
+    withAmount: boolean
+  }
   /** owner's money tools */
   money: {
     /** referral commission for doctors */
@@ -130,6 +141,7 @@ export const DEFAULT_SETTINGS: Settings = {
   abnormalStyle: 'gentle',
   receipt: { style: 'a4', thermalWidthMm: 80, footer: 'Thank you. Get well soon.', printerName: '', autoPrint: false },
   labels: { enabled: true, widthMm: 50, heightMm: 25, copies: 2, code: 'barcode', showAge: true, showTests: false, printerName: '', autoPrint: false },
+  payQr: { enabled: false, upiId: '', payeeName: '', onReceipt: 'whenDue', withAmount: true },
   money: { commission: true, commissionBasis: 'billed', expenses: true, expenseCategories: ['Reagents & kits', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other'] },
   packages: true,
   reportVitals: false,

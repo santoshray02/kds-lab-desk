@@ -211,6 +211,12 @@ Everything in this section can be switched on or off, and every value has a usua
 On the patient's page, the **Bill** card shows the price, what was paid (cash, UPI or card) and what is due. **Print receipt** prints the bill; **Receipt as PDF** opens it on screen. **Receive payment** records money paid later and how it was paid.
 In Settings choose a normal sheet (the receipt prints at the top) or a narrow roll printer and its width, the line at the bottom, a separate printer if you have one, and whether to print the receipt by itself when a new patient is saved (usual setting: off).
 
+### Payment QR (UPI)
+In **Settings → Bills, stickers & money → Payment QR (UPI)** tick the box and type the lab's **UPI ID** (it looks like `name@bank`). Use the lab's **business** UPI ID if you have one; some banks limit payments to a personal UPI ID. Then:
+* On the patient's page, when money is due, press **Show payment QR**. The patient scans it with any UPI app (PhonePe, Google Pay, Paytm, BHIM) and the amount is already filled in.
+* **The program cannot see the payment arrive.** Look at your phone or bank app, and only then press **Payment received**; it is saved as a UPI payment.
+* The printed receipt can carry the same QR: only when something is due (usual), always, or never.
+
 ### Sample stickers
 **Print stickers** on the patient's page prints one sticker per tube with the sample ID, the name, the age and sex, the date, and a barcode (or a QR code). In Settings set the sticker size (usual: 50 × 25 mm), how many per patient (usual: 2), barcode or QR, what to show, the printer, and whether to print them by itself on registration (usual: off).
 
@@ -229,7 +235,7 @@ The program lists people who look like the same person typed twice. Choose **Kee
 ### Excel file  (**Reports → Excel export**)
 Choose the dates and what to include (bills, money received, patients, expenses, doctor commission) and press **Save Excel file**. It opens in Excel, LibreOffice and Google Sheets. It contains patient names and phone numbers, so keep it safe.
 
-हिंदी सारांश: **रसीद** (Bill कार्ड → Print receipt), **सैंपल स्टिकर** (Print stickers), **पैकेज** (नए मरीज़ पर एक टैप), **डॉक्टर कमीशन** (रिपोर्ट → डॉक्टर कमीशन), **नकद और ख़र्चे** (रोज़ रात दराज़ का नकद गिनकर "Close the day"), **दोहरे रिकॉर्ड जोड़ना** (Patients → Possible duplicates), **Excel एक्सपोर्ट** (रिपोर्ट → Excel export)। सब कुछ सेटिंग्स → बिल, स्टिकर और पैसे में बदला या बंद किया जा सकता है, और "सामान्य मान वापस रखें" से पुराने मान लौट आते हैं।
+हिंदी सारांश: **भुगतान QR** (सेटिंग्स में लैब की UPI ID डालें; मरीज़ के पेज पर Show payment QR; पैसा फ़ोन में दिखने पर ही “पैसा मिल गया” दबाएँ), **रसीद** (Bill कार्ड → Print receipt), **सैंपल स्टिकर** (Print stickers), **पैकेज** (नए मरीज़ पर एक टैप), **डॉक्टर कमीशन** (रिपोर्ट → डॉक्टर कमीशन), **नकद और ख़र्चे** (रोज़ रात दराज़ का नकद गिनकर "Close the day"), **दोहरे रिकॉर्ड जोड़ना** (Patients → Possible duplicates), **Excel एक्सपोर्ट** (रिपोर्ट → Excel export)। सब कुछ सेटिंग्स → बिल, स्टिकर और पैसे में बदला या बंद किया जा सकता है, और "सामान्य मान वापस रखें" से पुराने मान लौट आते हैं।
 
 ## Less red on the report
 **Settings → Report header → "How results outside the normal range look".**

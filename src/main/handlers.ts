@@ -12,7 +12,7 @@ import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBa
 import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
 import { htmlToPdf, listPrinters, printHtml, type PaperSize } from './electronBits'
-import { labelsHtml, receiptHtml } from './bill'
+import { labelsHtml, payQrFor, receiptHtml } from './bill'
 import { findDuplicates, mergePatients } from './dedupe'
 import { exportXlsx, EXPORT_SHEETS, type ExportOptions } from './exporter'
 import { addExpense, addPayout, cashDay, closeDay, commissionReport, deleteExpense, deletePayout, doctorRates, listExpenses, listPayouts, setDoctorCommission } from './money'
@@ -208,6 +208,8 @@ export function makeHandlers(ctx: Ctx) {
     /** Bill and sample stickers. */
     bill: {
       receiptHtml: (visitId: number) => receiptHtml(db, visitId),
+      /** The UPI QR to show the patient (amount = what is due unless another amount is given). */
+      payQr: (visitId: number, amount?: number) => payQrFor(db, visitId, amount),
       printReceipt: async (visitId: number) => {
         const s = getSettings(db)
         await printHtml(receiptHtml(db, visitId), { silent: s.silentPrint, printerName: s.receipt.printerName || s.printerName, paper: receiptPaper(s) })

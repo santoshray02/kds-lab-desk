@@ -131,3 +131,40 @@ test('settings: receipt, stickers and money have defaults, can be changed, and c
     await app.close()
   }
 })
+
+test('payment QR: set the UPI ID, show the QR, record the payment as UPI', async () => {
+  const { app, page } = await launch()
+  try {
+    expect((await call(page, 'settings.get')).payQr).toMatchObject({ enabled: false, upiId: '', onReceipt: 'whenDue', withAmount: true })
+
+    // a wrong UPI ID cannot be saved
+    await page.getByTestId('nav-settings').click()
+    await page.getByTestId('stab-quick').click()
+    await page.getByTestId('payqr-enabled').check()
+    await page.getByTestId('payqr-upi').fill('not a upi id')
+    await expect(page.getByTestId('quick-save')).toBeDisabled()
+    await page.getByTestId('payqr-upi').fill('kdspathology@okaxis')
+    await expect(page.getByTestId('quick-save')).toBeEnabled()
+    await page.getByTestId('quick-save').click()
+    await expect.poll(async () => (await call(page, 'settings.get')).payQr.upiId).toBe('kdspathology@okaxis')
+
+    const v = await call(page, 'visits.create', { patient: { name: 'Qr Person', title: 'Mr', sex: 'M', phone: '', village: '' }, age: { years: 30, months: 0, days: 0 }, doctor: 'Self', panelCodes: ['CBC'], paid: 50 })
+    const html = await call(page, 'bill.receiptHtml', v.visitId)
+    expect(html).toContain('Pay ₹150 by UPI')
+
+    await page.getByTestId('nav-patients').click()
+    await page.getByTestId('search').fill('Qr Person')
+    await page.getByTestId('person-row').first().click()
+    await page.locator('table tbody tr').first().click()
+    await page.getByTestId('show-pay-qr').click()
+    await expect(page.getByTestId('pay-qr-image').locator('svg')).toBeVisible()
+    await page.getByTestId('pay-qr-amount').fill('100')
+    await page.getByTestId('pay-qr-received').click()
+    await expect(page.getByTestId('bill-due')).toContainText('50')
+    await expect(page.getByTestId('bill-card')).toContainText('UPI')
+    const g = await call(page, 'visits.get', v.visitId)
+    expect(g.payments.map((p: any) => [p.amount, p.method])).toEqual([[50, 'cash'], [100, 'upi']])
+  } finally {
+    await app.close()
+  }
+})

@@ -22,6 +22,8 @@ export interface ReceiptData {
   footer: string
   style: 'a4' | 'thermal'
   thermalWidthMm: number
+  /** a UPI QR to pay what is due */
+  payQr?: { svg: string; amount?: number; upiId: string }
 }
 
 /** The bill the patient takes home: tests, prices, discount, what was paid and what is still due. */
@@ -56,6 +58,10 @@ td.r{text-align:right;white-space:nowrap;padding-left:8px}
 .pr{display:flex;justify-content:space-between}
 .pk{font-weight:600;margin:2px 0 4px}
 .ft{text-align:center;margin-top:8px;color:#333}
+.pq{display:flex;gap:8px;align-items:center;margin-top:8px;border-top:1px dashed #777;padding-top:6px;font-size:${thermal ? '8.5pt' : '9.5pt'}}
+.pqs{flex:none;width:${thermal ? '26mm' : '30mm'}}
+.pqs svg{width:100%;height:auto;display:block}
+.pq small{display:block;color:#444;word-break:break-all}
 </style></head><body><div class="rc">
 <div class="lab">${esc(d.lab.name)}</div>
 <div class="sub">${esc(d.lab.tagline)}</div>
@@ -76,6 +82,7 @@ ${d.discount > 0 ? `<tr><td>Total of tests</td><td class="r">${inr(d.gross)}</td
 <tr class="due"><td>${d.due > 0 ? 'Balance due' : 'Balance'}</td><td class="r">${inr(d.due)}</td></tr>
 </table>
 ${pays}
+${d.payQr ? `<div class="pq" data-testid="pay-qr"><div class="pqs">${d.payQr.svg}</div><div><b>${d.payQr.amount ? `Pay ${inr(d.payQr.amount)} by UPI` : 'Pay by UPI'}</b><br>Scan with any UPI app<small>${esc(d.payQr.upiId)}</small></div></div>` : ''}
 ${d.footer ? `<div class="ft">${esc(d.footer)}</div>` : ''}
 </div></body></html>`
 }
