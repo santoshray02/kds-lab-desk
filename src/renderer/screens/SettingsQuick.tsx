@@ -4,8 +4,8 @@ import { isUpiId } from '../../shared/upi'
 import { SECTION_ORDER } from '../../shared/masterData'
 import { api, Modal, money, useApp, useAsync } from '../ui'
 
-type Group = Pick<Settings, 'receipt' | 'labels' | 'money' | 'packages' | 'payQr'>
-const pick = (s: Settings): Group => ({ receipt: s.receipt, labels: s.labels, money: s.money, packages: s.packages, payQr: s.payQr })
+type Group = Pick<Settings, 'receipt' | 'labels' | 'money' | 'packages' | 'payQr' | 'home'>
+const pick = (s: Settings): Group => ({ receipt: s.receipt, labels: s.labels, money: s.money, packages: s.packages, payQr: s.payQr, home: s.home })
 const clampInt = (v: string, lo: number, hi: number) => Math.max(lo, Math.min(hi, parseInt(v.replace(/\D/g, ''), 10) || lo))
 
 /** Settings → Bills, stickers & money. Every option has a usual value and can be put back with one button. */
@@ -14,14 +14,15 @@ export function QuickSettings({ pin }: { pin?: string }) {
   const [g, setG] = useState<Group>(pick(settings))
   const [printers, setPrinters] = useState<string[]>([])
   const [cats, setCats] = useState(settings.money.expenseCategories.join('\n'))
+  const [people, setPeople] = useState(settings.home.collectors.join('\n'))
   useEffect(() => { api.app.printers().then(setPrinters).catch(() => undefined) }, [])
   const upiBad = g.payQr.enabled && !isUpiId(g.payQr.upiId)
-  const dirty = JSON.stringify(g) !== JSON.stringify(pick(settings)) || cats !== settings.money.expenseCategories.join('\n')
+  const dirty = JSON.stringify(g) !== JSON.stringify(pick(settings)) || cats !== settings.money.expenseCategories.join('\n') || people !== settings.home.collectors.join('\n')
   const set = <K extends keyof Group>(k: K, patch: Partial<Group[K]> | Group[K]) => setG((x) => ({ ...x, [k]: typeof patch === 'object' ? { ...(x[k] as object), ...patch } : patch }) as Group)
 
   async function save() {
     const list = cats.split('\n').map((c) => c.trim()).filter(Boolean)
-    const next: Group = { ...g, money: { ...g.money, expenseCategories: list.length ? list : DEFAULT_SETTINGS.money.expenseCategories } }
+    const next: Group = { ...g, money: { ...g.money, expenseCategories: list.length ? list : DEFAULT_SETTINGS.money.expenseCategories }, home: { ...g.home, collectors: people.split('\n').map((c) => c.trim()).filter(Boolean) } }
     const r = await guard(api.settings.set(next, pin))
     if (r) { await reloadSettings(); toast(t('Settings saved'), 'ok') }
   }
@@ -30,6 +31,7 @@ export function QuickSettings({ pin }: { pin?: string }) {
     const d = pick(DEFAULT_SETTINGS)
     setG(d)
     setCats(d.money.expenseCategories.join('\n'))
+    setPeople('')
   }
   const printerSelect = (value: string, onChange: (v: string) => void, testid: string) => (
     <select className="input" value={value} onChange={(e) => onChange(e.target.value)} data-testid={testid}>
@@ -79,6 +81,17 @@ export function QuickSettings({ pin }: { pin?: string }) {
             <label className="checkrow"><input type="checkbox" checked={g.labels.showAge} onChange={(e) => set('labels', { showAge: e.target.checked })} /> {t('Show age and sex')}</label>
             <label className="checkrow"><input type="checkbox" checked={g.labels.showTests} onChange={(e) => set('labels', { showTests: e.target.checked })} /> {t('Show the test codes')}</label>
             <label className="checkrow"><input type="checkbox" checked={g.labels.autoPrint} onChange={(e) => set('labels', { autoPrint: e.target.checked })} data-testid="label-auto" /> {t('Print the stickers by itself when a new patient is saved')}</label>
+          </>
+        )}
+      </div>
+
+      <div className="card col" data-testid="home-card">
+        <h2>🏠 {t('Home collection')}</h2>
+        <label className="checkrow"><input type="checkbox" checked={g.home.enabled} onChange={(e) => set('home', { enabled: e.target.checked })} data-testid="home-enabled" /> {t('Offer “collect the sample at home” when registering a patient')}</label>
+        {g.home.enabled && (
+          <>
+            <label className="f" style={{ maxWidth: 260 }}>{t('Usual home visit charge (₹)')}<input className="input num" inputMode="numeric" value={g.home.fee} onChange={(e) => set('home', { fee: parseInt(e.target.value.replace(/\D/g, ''), 10) || 0 })} data-testid="home-fee-setting" /></label>
+            <label className="f">{t('Names of people who collect (one per line, optional)')}<textarea className="input" rows={3} value={people} onChange={(e) => setPeople(e.target.value)} data-testid="home-people" /></label>
           </>
         )}
       </div>

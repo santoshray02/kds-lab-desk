@@ -186,6 +186,19 @@ CREATE TABLE cash_closings(
   date TEXT PRIMARY KEY, opening REAL NOT NULL, expected REAL NOT NULL, counted REAL NOT NULL, note TEXT NOT NULL DEFAULT '',
   closed_at TEXT NOT NULL);
 `
+  },
+  {
+    id: 4,
+    name: 'home collection',
+    sql: `
+ALTER TABLE visits ADD COLUMN collection TEXT NOT NULL DEFAULT 'lab';
+ALTER TABLE visits ADD COLUMN home_address TEXT NOT NULL DEFAULT '';
+ALTER TABLE visits ADD COLUMN home_time TEXT NOT NULL DEFAULT '';
+ALTER TABLE visits ADD COLUMN collector TEXT NOT NULL DEFAULT '';
+ALTER TABLE visits ADD COLUMN collected_at TEXT;
+ALTER TABLE visits ADD COLUMN home_fee REAL NOT NULL DEFAULT 0;
+CREATE INDEX ix_visits_home ON visits(collection, collected_at);
+`
   }
 ]
 

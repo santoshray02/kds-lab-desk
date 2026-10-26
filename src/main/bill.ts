@@ -59,8 +59,8 @@ export function buildReceiptData(db: Db, visitId: number): ReceiptData {
     ageSex: `${formatAge({ years: v.age_y, months: v.age_m, days: v.age_d })} / ${g.patient.sex === 'F' ? 'Female' : 'Male'}`,
     phone: g.patient.phone, doctor: v.doctor, packageName: v.package_name ?? '',
     items: g.tests.map((t: any) => ({ name: String(t.name).replace(/ — sent out$/, ''), price: t.price })),
-    gross: g.tests.reduce((a: number, t: any) => a + t.price, 0), discount: v.discount, total,
-    payments: g.payments.map((p: any) => ({ dateText: dmy(String(p.paid_at).slice(0, 10)), amount: p.amount, method: METHOD[p.method] ?? 'Cash' })),
+    gross: g.tests.reduce((a: number, t: any) => a + t.price, 0), homeFee: v.home_fee ?? 0, discount: v.discount, total,
+    payments: g.payments.map((p: any) => ({ dateText: dmy(String(p.paid_at).slice(0, 10)), amount: p.amount, method: p.amount < 0 ? 'Refund' : METHOD[p.method] ?? 'Cash' })),
     paid, due: Math.max(0, total - paid), footer: s.receipt.footer, style: s.receipt.style, thermalWidthMm: s.receipt.thermalWidthMm,
     payQr: receiptPayQr(db, visitId, s, total - paid)
   }

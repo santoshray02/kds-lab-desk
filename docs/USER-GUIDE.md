@@ -211,6 +211,12 @@ Everything in this section can be switched on or off, and every value has a usua
 On the patient's page, the **Bill** card shows the price, what was paid (cash, UPI or card) and what is due. **Print receipt** prints the bill; **Receipt as PDF** opens it on screen. **Receive payment** records money paid later and how it was paid.
 In Settings choose a normal sheet (the receipt prints at the top) or a narrow roll printer and its width, the line at the bottom, a separate printer if you have one, and whether to print the receipt by itself when a new patient is saved (usual setting: off).
 
+### Home collection (sample taken at the patient's home)
+On **New patient**, tick **Collect the sample at the patient's home**. Type the address (it starts as the village), an optional time such as "morning 7 to 9", who will go, and the home-visit charge (the usual charge is set in Settings and is added to the bill). The visit then appears on the **Today** screen under **Home collections to do**. Press **Print the list for the collector** to give them a sheet with names, phone numbers, addresses, tests and the amount to collect. When the sample is taken, press **Collected** (or **Mark as collected** on the patient's page). Switch the feature off, or set the usual charge and the collectors' names, in Settings → Bills, stickers & money → Home collection.
+
+### Giving money back (refund)
+On the patient's page, in the **Bill** card, press **Give money back**. Type the amount (no more than was paid), how it was paid back, and why. Tick **Also lower the bill** when a test was not done; leave it unticked when the patient had simply paid too much. It asks for the PIN. The refund shows on the receipt and is taken off the day's cash, UPI or card total, so the cash book stays right.
+
 ### Payment QR (UPI)
 In **Settings → Bills, stickers & money → Payment QR (UPI)** tick the box and type the lab's **UPI ID** (it looks like `name@bank`). Use the lab's **business** UPI ID if you have one; some banks limit payments to a personal UPI ID. Then:
 * On the patient's page, when money is due, press **Show payment QR**. The patient scans it with any UPI app (PhonePe, Google Pay, Paytm, BHIM) and the amount is already filled in.
@@ -235,7 +241,7 @@ The program lists people who look like the same person typed twice. Choose **Kee
 ### Excel file  (**Reports → Excel export**)
 Choose the dates and what to include (bills, money received, patients, expenses, doctor commission) and press **Save Excel file**. It opens in Excel, LibreOffice and Google Sheets. It contains patient names and phone numbers, so keep it safe.
 
-हिंदी सारांश: **भुगतान QR** (सेटिंग्स में लैब की UPI ID डालें; मरीज़ के पेज पर Show payment QR; पैसा फ़ोन में दिखने पर ही “पैसा मिल गया” दबाएँ), **रसीद** (Bill कार्ड → Print receipt), **सैंपल स्टिकर** (Print stickers), **पैकेज** (नए मरीज़ पर एक टैप), **डॉक्टर कमीशन** (रिपोर्ट → डॉक्टर कमीशन), **नकद और ख़र्चे** (रोज़ रात दराज़ का नकद गिनकर "Close the day"), **दोहरे रिकॉर्ड जोड़ना** (Patients → Possible duplicates), **Excel एक्सपोर्ट** (रिपोर्ट → Excel export)। सब कुछ सेटिंग्स → बिल, स्टिकर और पैसे में बदला या बंद किया जा सकता है, और "सामान्य मान वापस रखें" से पुराने मान लौट आते हैं।
+हिंदी सारांश: **घर से सैंपल** (New patient पर टिक करें, Today पर सूची और “Print the list for the collector”), **पैसे लौटाना** (Bill कार्ड → Give money back, PIN चाहिए), **भुगतान QR** (सेटिंग्स में लैब की UPI ID डालें; मरीज़ के पेज पर Show payment QR; पैसा फ़ोन में दिखने पर ही “पैसा मिल गया” दबाएँ), **रसीद** (Bill कार्ड → Print receipt), **सैंपल स्टिकर** (Print stickers), **पैकेज** (नए मरीज़ पर एक टैप), **डॉक्टर कमीशन** (रिपोर्ट → डॉक्टर कमीशन), **नकद और ख़र्चे** (रोज़ रात दराज़ का नकद गिनकर "Close the day"), **दोहरे रिकॉर्ड जोड़ना** (Patients → Possible duplicates), **Excel एक्सपोर्ट** (रिपोर्ट → Excel export)। सब कुछ सेटिंग्स → बिल, स्टिकर और पैसे में बदला या बंद किया जा सकता है, और "सामान्य मान वापस रखें" से पुराने मान लौट आते हैं।
 
 ## Less red on the report
 **Settings → Report header → "How results outside the normal range look".**

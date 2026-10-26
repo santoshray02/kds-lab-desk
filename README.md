@@ -41,6 +41,7 @@
 - **Bills and stickers:** a receipt (A4 or narrow roll) and sample-tube stickers with a barcode or QR, plus one-tap health packages.
 - **Money tools:** doctor commission with payouts, daily expenses and cash closing, UPI / card / cash tracking, and an Excel export for the accountant.
 - **Payment QR:** a UPI QR for the amount due, on screen or on the receipt (the lab's own UPI ID; nothing leaves the PC).
+- **Home collection and refunds:** book a sample pick-up at the patient's home with a printable list for the collector; give money back with the books staying right.
 - **Tidy records:** finds and merges patients who were registered twice.
 - **Vitals:** height, weight, blood pressure, pulse, temperature and oxygen level, with BMI for adults.
 - **Import old Word reports** as read-only history. Tests sent to another lab are tracked as "sent out".

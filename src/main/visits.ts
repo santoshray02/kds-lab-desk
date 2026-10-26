@@ -1,6 +1,6 @@
 import { copyFileSync, mkdirSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { nextSampleId, titleChecks } from '../shared/age'
+import { formatAge, nextSampleId, titleChecks } from '../shared/age'
 import type { AgeInput, Sex } from '../shared/types'
 import { NO_VITALS, vitalsProblem, type Vitals } from '../shared/vitals'
 import { audit, enqueue, nowIso, type Db } from './db'
@@ -19,6 +19,8 @@ export interface NewVisitInput {
   notes?: string
   date?: string
   vitals?: Vitals
+  /** sample to be collected at the patient's home */
+  home?: { address: string; time?: string; collector?: string; fee?: number }
   /** how the money paid now was received */
   payMethod?: PayMethod
   /** name of the health package the tests were chosen from (printed on the bill) */
@@ -80,7 +82,9 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
     const prices = panels.map((p) => input.priceOverrides?.[p.code] ?? p.price)
     const gross = prices.reduce((a: number, b: number) => a + b, 0)
     const discount = Math.max(0, input.discount ?? 0)
-    const total = Math.max(0, gross - discount)
+    const homeFee = input.home ? Math.max(0, Math.round((input.home.fee ?? 0) * 100) / 100) : 0
+    if (input.home && input.home.address.trim().length < 3) throw new Error('Write the address for the home collection')
+    const total = Math.max(0, gross - discount) + homeFee
     const visitId = db.run(
       `INSERT INTO visits(patient_id, sample_id, visit_date, age_y, age_m, age_d, doctor, specimen, total, discount, notes, created_at, package_name)
        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
@@ -91,6 +95,12 @@ export function createVisit(db: Db, input: NewVisitInput, actor = ''): { visitId
     panels.forEach((p, i) => {
       db.run('INSERT INTO visit_tests(visit_id, panel_id, panel_code, name, price, sent_out) VALUES(?,?,?,?,?,?)', visitId, p.id, p.code, p.name, prices[i], p.sent_out)
     })
+    if (input.home) {
+      db.run(
+        "UPDATE visits SET collection = 'home', home_address = ?, home_time = ?, collector = ?, home_fee = ? WHERE id = ?",
+        input.home.address.trim(), (input.home.time ?? '').trim(), (input.home.collector ?? '').trim(), homeFee, visitId
+      )
+    }
     touchDoctor(db, doctor)
     // a rate that is set today is kept with the visit, so changing it later does not rewrite old months (visits with no rate follow the doctor's current rate)
     const rate = db.get<{ commission_pct: number }>('SELECT commission_pct FROM doctors WHERE name = ?', doctor)?.commission_pct ?? 0
@@ -257,4 +267,76 @@ export function attachSentOutPdf(db: Db, visitTestId: number, srcPath: string, d
   audit(db, 'sentout.attach', 'visit_tests', visitTestId, basename(srcPath))
   enqueue(db, 'visit', t.visit_id)
   return dest
+}
+
+/* ------------------------------------------------------------ home collection */
+
+export interface HomeJob {
+  visitId: number
+  sampleId: string
+  date: string
+  patient: string
+  phone: string
+  age: string
+  address: string
+  time: string
+  collector: string
+  tests: string
+  due: number
+  fee: number
+}
+
+/** Home visits whose sample has not been collected yet, oldest first. */
+export function homePending(db: Db): HomeJob[] {
+  return db.all<any>(
+    `SELECT v.id, v.sample_id, v.visit_date, v.home_address, v.home_time, v.collector, v.home_fee, v.total,
+       p.name, p.title, p.phone, v.age_y, v.age_m, v.age_d,
+       (SELECT group_concat(name, ', ') FROM visit_tests t WHERE t.visit_id = v.id) tests,
+       COALESCE((SELECT SUM(amount) FROM payments y WHERE y.visit_id = v.id), 0) paid
+     FROM visits v JOIN patients p ON p.id = v.patient_id
+     WHERE v.collection = 'home' AND v.collected_at IS NULL AND v.cancelled = 0 ORDER BY v.visit_date, v.id`
+  ).map((r): HomeJob => ({
+    visitId: r.id, sampleId: r.sample_id, date: r.visit_date, patient: `${r.title ? r.title + '. ' : ''}${r.name}`, phone: r.phone,
+    age: formatAge({ years: r.age_y, months: r.age_m, days: r.age_d }), address: r.home_address, time: r.home_time, collector: r.collector,
+    tests: r.tests ?? '', due: Math.max(0, r.total - r.paid), fee: r.home_fee
+  }))
+}
+
+/** The sample was taken (or, with `collected = false`, that was marked by mistake). A collector's name can be filled in now. */
+export function markCollected(db: Db, visitId: number, collected = true, collector?: string): void {
+  const v = db.get<{ collection: string; cancelled: number }>('SELECT collection, cancelled FROM visits WHERE id = ?', visitId)
+  if (!v) throw new Error('Visit not found')
+  if (v.collection !== 'home') throw new Error('This is not a home collection')
+  if (v.cancelled) throw new Error('This visit is cancelled')
+  db.run('UPDATE visits SET collected_at = ?, collector = COALESCE(NULLIF(?, \'\'), collector) WHERE id = ?', collected ? nowIso() : null, (collector ?? '').trim(), visitId)
+  audit(db, collected ? 'home.collected' : 'home.uncollected', 'visits', visitId)
+  enqueue(db, 'visit', visitId)
+}
+
+/* ------------------------------------------------------------ refunds */
+
+/**
+ * Give money back to the patient. It is recorded as a negative payment, so the cash and UPI totals, dues and commission
+ * all follow by themselves. With `lowerBill` the bill is also reduced (as a discount) by the same amount, for example
+ * when a test was not done; without it the patient simply gets back an overpayment and still owes the same bill.
+ */
+export function refundPayment(db: Db, visitId: number, o: { amount: number; method?: string; reason: string; lowerBill?: boolean }, actor = ''): void {
+  const v = db.get<{ total: number; discount: number; cancelled: number }>('SELECT total, discount, cancelled FROM visits WHERE id = ?', visitId)
+  if (!v) throw new Error('Visit not found')
+  if (v.cancelled) throw new Error('This visit is cancelled')
+  const amount = Math.round(o.amount * 100) / 100
+  if (!(amount > 0)) throw new Error('Amount must be more than zero')
+  const why = (o.reason ?? '').trim()
+  if (why.length < 3) throw new Error('Please write the reason for the refund.')
+  const paid = paidTotal(db, visitId)
+  if (amount > paid + 0.0001) throw new Error(`Only ${paid} was paid, so no more than that can be given back.`)
+  db.tx(() => {
+    db.run('INSERT INTO payments(visit_id, amount, paid_at, note, method) VALUES(?,?,?,?,?)', visitId, -amount, nowIso(), `Refund: ${why}`, methodOf(o.method))
+    if (o.lowerBill) {
+      const moved = Math.min(amount, v.total)
+      db.run('UPDATE visits SET total = ?, discount = ? WHERE id = ?', v.total - moved, v.discount + moved, visitId)
+    }
+    audit(db, 'payment.refund', 'visits', visitId, `${amount} ${why}${o.lowerBill ? ' (bill lowered)' : ''}`, actor)
+    enqueue(db, 'visit', visitId)
+  })
 }

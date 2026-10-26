@@ -1,4 +1,5 @@
 import { formatAgeShort } from '../../shared/age'
+import { HomeJobs } from './HomeCollection'
 import { api, fmtDate, money, todayStr, useApp, useAsync, type VisitItem } from '../ui'
 
 export function statusTag(v: Pick<VisitItem, 'reportStatus'>, t: (s: string) => string) {
@@ -54,6 +55,8 @@ export function Today() {
         <div className="stat"><div className="n">{day.data ? money(day.data.cashReceived) : '–'}</div><div className="muted">{t('Cash received today')}</div></div>
         <div className="stat"><div className="n">{pending.data?.sentOut.length ?? '–'}</div><div className="muted">{t('Sent-out awaited')}</div></div>
       </div>
+
+      <HomeJobs />
 
       <div className="card">
         <h2>{t('Today’s patients')}</h2>

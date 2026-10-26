@@ -32,6 +32,11 @@ export function NewPatient({ personId }: { personId?: number }) {
   const [warnOk, setWarnOk] = useState(false)
   const [vit, setVit] = useState<VitalsText>(EMPTY_VITALS_TEXT)
   const [pkg, setPkg] = useState<{ id: number; name: string; price: number; panelCodes: string[] } | null>(null)
+  const [homeOn, setHomeOn] = useState(false)
+  const [homeAddr, setHomeAddr] = useState('')
+  const [homeTime, setHomeTime] = useState('')
+  const [collector, setCollector] = useState('')
+  const [homeFee, setHomeFee] = useState(String(settings.home.fee || ''))
   const [payMethod, setPayMethod] = useState<'cash' | 'upi' | 'card' | 'other'>('cash')
   const pkgs = useAsync(() => (settings.packages ? api.packages.list() : Promise.resolve([])), [settings.packages])
 
@@ -95,7 +100,8 @@ export function NewPatient({ personId }: { personId?: number }) {
   const pkgPrices = pkgOn ? Object.fromEntries(pkg!.panelCodes.map((c, i) => [c, splitPackagePrice(pkg!.panelCodes.map(priceOf), pkg!.price)[i]])) : undefined
   const gross = [...codes].reduce((a, c) => a + (pkgPrices?.[c] ?? priceOf(c)), 0)
   const disc = Math.max(0, Number(discount) || 0)
-  const total = Math.max(0, gross - disc)
+  const feeN = homeOn ? Math.max(0, Number(homeFee) || 0) : 0
+  const total = Math.max(0, gross - disc) + feeN
   const paidN = Math.max(0, Number(paid) || 0)
 
   const age = { years: Number(years) || 0, months: Number(months) || 0, days: Number(days) || 0 }
@@ -125,7 +131,7 @@ export function NewPatient({ personId }: { personId?: number }) {
   }
 
   const needPhone = settings.phoneRequired && digits.length !== 10
-  const canSave = name.trim().length > 1 && !!sex && ageGiven && codes.size > 0 && !needPhone && (phone === '' || digits.length === 10) && !vitalsProblem(vitalsOf(vit))
+  const canSave = name.trim().length > 1 && !!sex && ageGiven && codes.size > 0 && !needPhone && (phone === '' || digits.length === 10) && !vitalsProblem(vitalsOf(vit)) && (!homeOn || homeAddr.trim().length >= 3)
 
   async function save() {
     if (!canSave || saving) return
@@ -134,7 +140,8 @@ export function NewPatient({ personId }: { personId?: number }) {
     const r = await guard(api.visits.create({
       patient: { id: typeof picked === 'number' ? picked : undefined, name, title, sex: sex as Sex, phone: digits, village },
       age, doctor: doctor || 'Self', panelCodes: [...codes], discount: disc, paid: Math.min(paidN, total), vitals: vitalsOf(vit),
-      priceOverrides: pkgPrices, package: pkgOn ? pkg!.name : undefined, payMethod
+      priceOverrides: pkgPrices, package: pkgOn ? pkg!.name : undefined, payMethod,
+      home: homeOn ? { address: homeAddr.trim(), time: homeTime.trim(), collector: collector.trim(), fee: feeN } : undefined
     }))
     setSaving(false)
     if (r) {
@@ -254,6 +261,25 @@ export function NewPatient({ personId }: { personId?: number }) {
         <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 18 }}>➕ {t('Vitals (optional): height, weight, blood pressure…')}</summary>
         <div style={{ marginTop: 12 }}><VitalsFields value={vit} onChange={setVit} ageYears={age.years} /></div>
       </details>
+
+      {settings.home.enabled && (
+        <div className="card col" data-testid="home-block">
+          <label className="checkrow"><input type="checkbox" checked={homeOn} onChange={(e) => { setHomeOn(e.target.checked); if (e.target.checked && !homeAddr) setHomeAddr(village) }} data-testid="home-on" /> 🏠 <b>{t('Collect the sample at the patient’s home')}</b></label>
+          {homeOn && (
+            <>
+              <Field label={t('Address (where to go)')}><input className="input" data-nav value={homeAddr} onChange={(e) => setHomeAddr(e.target.value)} data-testid="home-address" /></Field>
+              <div className="grid3">
+                <Field label={t('Time (optional)')}><input className="input" data-nav value={homeTime} onChange={(e) => setHomeTime(e.target.value)} placeholder={t('e.g. morning 7 to 9')} data-testid="home-time" /></Field>
+                <Field label={t('Who will collect (optional)')}>
+                  <input className="input" list="collectors" data-nav value={collector} onChange={(e) => setCollector(e.target.value)} data-testid="home-collector" />
+                  <datalist id="collectors">{settings.home.collectors.map((c) => <option key={c} value={c} />)}</datalist>
+                </Field>
+                <Field label={t('Home visit charge (₹)')}><input className="input num" inputMode="numeric" data-nav value={homeFee} onChange={(e) => setHomeFee(e.target.value.replace(/\D/g, ''))} data-testid="home-fee" /></Field>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="card">
         <div className="grid4">

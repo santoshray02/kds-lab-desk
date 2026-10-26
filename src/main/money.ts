@@ -59,7 +59,7 @@ function earnings(db: Db, month: string | null): Map<string, Earn> {
   const rate = 'COALESCE(v.commission_pct, d.commission_pct, 0)'
   const visitFilter = "v.cancelled = 0 AND v.source IN ('app','demo') AND lower(v.doctor) <> 'self'"
   const byBill = db.all<any>(
-    `SELECT v.doctor, COUNT(*) n, SUM(v.total) billed, SUM(v.total * ${rate} / 100.0) earned
+    `SELECT v.doctor, COUNT(*) n, SUM(v.total) billed, SUM((v.total - v.home_fee) * ${rate} / 100.0) earned
      FROM visits v LEFT JOIN doctors d ON d.name = v.doctor COLLATE NOCASE
      WHERE ${visitFilter} ${month ? 'AND substr(v.visit_date, 1, 7) = ?' : ''} GROUP BY v.doctor COLLATE NOCASE`,
     ...(month ? [month] : [])
@@ -162,6 +162,8 @@ export interface CashDay {
   upi: number
   card: number
   other: number
+  /** cash given back to patients that day (already taken off `cash`) */
+  refunds: number
   expenses: Expense[]
   expensesTotal: number
   /** opening + cash received - expenses */
@@ -197,6 +199,7 @@ export function cashDay(db: Db, date: string = localDate(clock.now())): CashDay 
   const expenses = listExpenses(db, date, date)
   const expensesTotal = round2(expenses.reduce((a, e) => a + e.amount, 0))
   const cash = by('cash')
+  const refunds = round2(db.get<{ s: number | null }>("SELECT -SUM(y.amount) s FROM payments y JOIN visits v ON v.id = y.visit_id WHERE v.cancelled = 0 AND y.amount < 0 AND y.method = 'cash' AND date(y.paid_at, 'localtime') = ?", date)?.s ?? 0)
   const expected = round2(opening + cash - expensesTotal)
   const c = db.get<any>('SELECT * FROM cash_closings WHERE date = ?', date)
   const m0 = `${ym(date)}-01`
@@ -204,7 +207,7 @@ export function cashDay(db: Db, date: string = localDate(clock.now())): CashDay 
   const received = round2(dayPaid(db, m0, m1))
   const spent = round2(dayExpenses(db, m0, m1))
   return {
-    date, opening, cash, upi: by('upi'), card: by('card'), other: by('other'), expenses, expensesTotal, expected,
+    date, opening, cash, refunds, upi: by('upi'), card: by('card'), other: by('other'), expenses, expensesTotal, expected,
     closing: c ? { counted: c.counted, difference: round2(c.counted - c.expected), note: c.note, closedAt: c.closed_at } : null,
     month: { received, expenses: spent, net: round2(received - spent) }
   }

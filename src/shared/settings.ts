@@ -79,6 +79,14 @@ export interface Settings {
     expenses: boolean
     expenseCategories: string[]
   }
+  /** sample collection at the patient's home */
+  home: {
+    enabled: boolean
+    /** the usual charge for a home visit, filled in at registration (can be changed per patient) */
+    fee: number
+    /** names offered when choosing who goes to collect */
+    collectors: string[]
+  }
   /** one-click health packages on the registration screen */
   packages: boolean
   /** print the height, weight, blood pressure etc. on the report when they were taken */
@@ -143,6 +151,7 @@ export const DEFAULT_SETTINGS: Settings = {
   labels: { enabled: true, widthMm: 50, heightMm: 25, copies: 2, code: 'barcode', showAge: true, showTests: false, printerName: '', autoPrint: false },
   payQr: { enabled: false, upiId: '', payeeName: '', onReceipt: 'whenDue', withAmount: true },
   money: { commission: true, commissionBasis: 'billed', expenses: true, expenseCategories: ['Reagents & kits', 'Salary', 'Rent', 'Electricity', 'Transport', 'Other'] },
+  home: { enabled: true, fee: 0, collectors: [] },
   packages: true,
   reportVitals: false,
   evolution: { url: '', instance: '', apiKey: '' },

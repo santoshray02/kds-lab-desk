@@ -168,3 +168,53 @@ test('payment QR: set the UPI ID, show the QR, record the payment as UPI', async
     await app.close()
   }
 })
+
+test('home collection: register with an address, see it on Today, mark collected, then give money back', async () => {
+  const { app, page } = await launch()
+  try {
+    await page.getByTestId('nav-new').click()
+    await page.getByTestId('title').selectOption('Mrs')
+    await page.getByTestId('name').fill('Hema Home')
+    await page.getByTestId('age-years').fill('52')
+    await page.getByTestId('village').fill('Rampur')
+    await page.getByTestId('test-CBC').click()
+    await page.getByTestId('test-ESR').click()
+    await page.getByTestId('home-on').check()
+    await expect(page.getByTestId('home-address')).toHaveValue('Rampur') // taken from the village
+    await page.getByTestId('home-address').fill('Near the temple, Rampur')
+    await page.getByTestId('home-time').fill('morning 7 to 9')
+    await page.getByTestId('home-collector').fill('Sunil')
+    await page.getByTestId('home-fee').fill('40')
+    await expect(page.getByTestId('total')).toContainText('300') // 200 + 60 + 40
+    await page.getByTestId('paid').fill('100')
+    await page.getByTestId('save-visit').click()
+
+    await expect(page.getByTestId('home-info')).toContainText('Near the temple, Rampur')
+    await expect(page.getByTestId('home-info')).toContainText('Not collected yet')
+    await expect(page.getByTestId('bill-due')).toContainText('200')
+
+    // the job is on Today until the sample is collected
+    await page.getByTestId('nav-today').click()
+    await expect(page.getByTestId('home-job')).toHaveCount(1)
+    await expect(page.getByTestId('home-jobs')).toContainText('Hema Home')
+    await page.getByTestId('home-collected').click()
+    await expect(page.getByTestId('home-jobs')).toHaveCount(0)
+
+    // give money back and lower the bill with it
+    await page.getByTestId('visit-row').first().click()
+    await expect(page.getByTestId('home-info')).toContainText('Collected')
+    await page.getByTestId('refund-open').click()
+    await page.getByTestId('refund-amount').fill('30')
+    await page.getByTestId('refund-reason').fill('ESR not done')
+    await page.getByTestId('refund-save').click()
+    await expect(page.getByTestId('refund-form')).toHaveCount(0)
+    await expect(page.getByTestId('bill-due')).toContainText('200') // bill 270 - (100 paid - 30 refunded) = 200
+    const id = Number((await call(page, 'visits.list', { limit: 1 }))[0].id)
+    const g = await call(page, 'visits.get', id)
+    expect(g.visit.total).toBe(270)
+    expect(g.payments.map((p: any) => p.amount)).toEqual([100, -30])
+    expect(await call(page, 'bill.receiptHtml', id)).toContain('Home collection charge')
+  } finally {
+    await app.close()
+  }
+})

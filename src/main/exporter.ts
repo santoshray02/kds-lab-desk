@@ -44,10 +44,10 @@ export function exportSheets(db: Db, o: ExportOptions): Sheet[] {
     out.push({
       name: 'Visits and bills', header: true,
       rows: [
-        ['Date', 'Sample ID', 'Patient', 'Age', 'Sex', 'Phone', 'Village', 'Referred by', 'Package', 'Tests', 'Tests total', 'Discount', 'Net bill', 'Paid', 'Due', 'Report'],
+        ['Date', 'Sample ID', 'Patient', 'Age', 'Sex', 'Phone', 'Village', 'Referred by', 'Package', 'Collection', 'Home charge', 'Tests', 'Tests total', 'Discount', 'Net bill', 'Paid', 'Due', 'Report'],
         ...rows.map((r): Cell[] => [
           r.visit_date, r.sample_id, `${r.ptitle ? r.ptitle + '. ' : ''}${r.pname}`, formatAge({ years: r.age_y, months: r.age_m, days: r.age_d }), r.psex === 'F' ? 'Female' : 'Male',
-          r.pphone, r.pvillage, r.doctor, r.package_name || null, r.tests ?? '', r.gross, r.discount, r.total, r.paid, Math.max(0, r.total - r.paid), REPORT[r.rstatus ?? 'none'] ?? r.rstatus
+          r.pphone, r.pvillage, r.doctor, r.package_name || null, r.collection === 'home' ? 'Home' : 'Lab', r.home_fee || null, r.tests ?? '', r.gross, r.discount, r.total, r.paid, Math.max(0, r.total - r.paid), REPORT[r.rstatus ?? 'none'] ?? r.rstatus
         ])
       ]
     })

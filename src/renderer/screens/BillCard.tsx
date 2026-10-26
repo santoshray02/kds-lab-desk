@@ -7,11 +7,16 @@ const METHOD_LABEL: Record<string, string> = { cash: 'Cash', upi: 'UPI', card: '
 
 /** What the patient was charged and paid, with the receipt, the sample stickers, and "receive payment". */
 export function BillCard({ visitId, testIds }: { visitId: number; testIds?: number }) {
-  const { t, guard, toast, settings } = useApp()
+  const { t, guard, toast, settings, askPin } = useApp()
   const g = useAsync(() => api.visits.get(visitId), [visitId, testIds])
   const [busy, setBusy] = useState('')
   const [paying, setPaying] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
+  const [refunding, setRefunding] = useState(false)
+  const [rAmount, setRAmount] = useState('')
+  const [rMethod, setRMethod] = useState<Method>('cash')
+  const [rReason, setRReason] = useState('')
+  const [rLower, setRLower] = useState(true)
   const [amount, setAmount] = useState('')
   const [method, setMethod] = useState<Method>('cash')
   const [copies, setCopies] = useState(String(settings.labels.copies))
@@ -24,6 +29,19 @@ export function BillCard({ visitId, testIds }: { visitId: number; testIds?: numb
     const r = await guard(fn())
     setBusy('')
     if (r !== undefined && done) toast(done, 'ok')
+  }
+  async function refund() {
+    const n = Number(rAmount)
+    if (!(n > 0) || rReason.trim().length < 3) return
+    const ps = await api.settings.pinStatus()
+    const pin = ps.ownerSet ? await askPin(t('PIN to give money back')) : ''
+    if (pin === null) return
+    const r = await guard(api.visits.refund(visitId, { amount: n, method: rMethod, reason: rReason.trim(), lowerBill: rLower }, pin || undefined))
+    if (r) { toast(t('Money given back is recorded'), 'ok'); setRefunding(false); setRAmount(''); setRReason(''); g.reload() }
+  }
+  async function collected(done: boolean) {
+    const r = await guard(api.home.markCollected(visitId, done))
+    if (r) { toast(done ? t('Marked as collected') : t('Marked as not collected'), 'ok'); g.reload() }
   }
   async function receive() {
     const n = Math.min(Number(amount) || 0, due)
@@ -50,6 +68,18 @@ export function BillCard({ visitId, testIds }: { visitId: number; testIds?: numb
           )}
         </div>
       </div>
+      {v.collection === 'home' && (
+        <div className="alert info" data-testid="home-info">
+          <b>🏠</b>
+          <span>
+            {t('Home collection')}: {v.home_address}{v.home_time ? ` · ${v.home_time}` : ''}{v.collector ? ` · ${t('Collector')}: ${v.collector}` : ''}{v.home_fee > 0 ? ` · ${t('charge')} ${money(v.home_fee)}` : ''}
+            {' — '}
+            {v.collected_at
+              ? <><b>✔ {t('Collected')}</b> <button className="btn small ghost" onClick={() => collected(false)}>{t('Undo')}</button></>
+              : <><b style={{ color: 'var(--eosin)' }}>{t('Not collected yet')}</b> <button className="btn small" onClick={() => collected(true)} data-testid="mark-collected">✔ {t('Mark as collected')}</button></>}
+          </span>
+        </div>
+      )}
       <div className="statgrid">
         <div className="stat"><div className="n">{money(v.total)}</div><div className="muted">{t('Bill')}{v.discount > 0 ? ` (${t('discount')} ${money(v.discount)})` : ''}</div></div>
         <div className="stat"><div className="n">{money(g.data.paid)}</div><div className="muted">{t('Paid')}</div></div>
@@ -63,6 +93,29 @@ export function BillCard({ visitId, testIds }: { visitId: number; testIds?: numb
         </div>
       )}
       {qrOpen && <PayQrModal visitId={visitId} due={due} onClose={() => setQrOpen(false)} onPaid={() => { setQrOpen(false); g.reload() }} />}
+      {g.data.paid > 0 && !refunding && (
+        <div className="noprint"><button className="btn ghost small" onClick={() => { setRAmount(''); setRefunding(true) }} data-testid="refund-open">↩ {t('Give money back')}</button></div>
+      )}
+      {refunding && (
+        <div className="col noprint" data-testid="refund-form" style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+          <b>{t('Give money back to the patient')}</b>
+          <div className="row wrap">
+            <label className="f" style={{ width: 150 }}>{t('Amount (₹)')}<input className="input num" autoFocus inputMode="decimal" value={rAmount} onChange={(e) => setRAmount(e.target.value.replace(/[^\d.]/g, ''))} data-testid="refund-amount" /></label>
+            <label className="f" style={{ width: 150 }}>{t('Paid back by')}
+              <select className="input" value={rMethod} onChange={(e) => setRMethod(e.target.value as Method)} data-testid="refund-method">
+                <option value="cash">{t('Cash')}</option><option value="upi">UPI</option><option value="card">{t('Card')}</option><option value="other">{t('Other')}</option>
+              </select>
+            </label>
+            <label className="f grow">{t('Why? (kept in the history)')}<input className="input" value={rReason} onChange={(e) => setRReason(e.target.value)} data-testid="refund-reason" /></label>
+          </div>
+          <label className="checkrow"><input type="checkbox" checked={rLower} onChange={(e) => setRLower(e.target.checked)} data-testid="refund-lower" /> {t('Also lower the bill by this amount (for example a test that was not done)')}</label>
+          <div className="row">
+            <button className="btn" disabled={!(Number(rAmount) > 0) || Number(rAmount) > g.data.paid || rReason.trim().length < 3} onClick={refund} data-testid="refund-save">{t('Record the refund')}</button>
+            <button className="btn ghost" onClick={() => setRefunding(false)}>{t('Cancel')}</button>
+            <span className="muted">{t('Paid so far')}: {money(g.data.paid)}</span>
+          </div>
+        </div>
+      )}
       {due > 0 && !paying && <div className="noprint"><button className="btn" onClick={() => { setAmount(String(Math.round(due))); setPaying(true) }} data-testid="receive-open">＋ {t('Receive payment')}</button></div>}
       {paying && (
         <div className="row wrap noprint" data-testid="receive-form" onKeyDown={(e) => e.key === 'Enter' && receive()}>

@@ -1,7 +1,7 @@
 import type { Settings } from './settings'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-const inr = (n: number) => '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })
+const inr = (n: number) => (n < 0 ? '−' : '') + '₹' + (Math.round(Math.abs(n) * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 })
 
 export interface ReceiptData {
   lab: Settings['lab']
@@ -14,6 +14,8 @@ export interface ReceiptData {
   packageName: string
   items: { name: string; price: number }[]
   gross: number
+  /** charge for collecting the sample at home */
+  homeFee?: number
   discount: number
   total: number
   payments: { dateText: string; amount: number; method: string }[]
@@ -76,7 +78,7 @@ ${d.packageName ? `<div class="pk">Package: ${esc(d.packageName)}</div>` : ''}
 <table>${rows}</table>
 <div class="line"></div>
 <table>
-${d.discount > 0 ? `<tr><td>Total of tests</td><td class="r">${inr(d.gross)}</td></tr><tr><td>Discount</td><td class="r">− ${inr(d.discount)}</td></tr>` : ''}
+${d.discount > 0 || (d.homeFee ?? 0) > 0 ? `<tr><td>Total of tests</td><td class="r">${inr(d.gross)}</td></tr>` : ''}${(d.homeFee ?? 0) > 0 ? `<tr><td>Home collection charge</td><td class="r">${inr(d.homeFee!)}</td></tr>` : ''}${d.discount > 0 ? `<tr><td>Discount</td><td class="r">− ${inr(d.discount)}</td></tr>` : ''}
 <tr class="tot"><td>Net amount</td><td class="r">${inr(d.total)}</td></tr>
 <tr><td>Paid</td><td class="r">${inr(d.paid)}</td></tr>
 <tr class="due"><td>${d.due > 0 ? 'Balance due' : 'Balance'}</td><td class="r">${inr(d.due)}</td></tr>
@@ -127,4 +129,41 @@ body{font-family:"Segoe UI","Noto Sans",Arial,sans-serif;color:#000;-webkit-prin
 .lb.bar .cd{flex:1 1 5mm;min-height:5mm;width:100%}
 .lb.bar .cd svg{width:100%;height:100%}
 </style></head><body>${Array.from({ length: n }, () => one).join('')}</body></html>`
+}
+
+export interface HomeListRow {
+  sampleId: string
+  patient: string
+  age: string
+  phone: string
+  address: string
+  time: string
+  collector: string
+  tests: string
+  due: number
+}
+
+/** The list a collector takes along: who, where, when, which tubes, and how much to collect. */
+export function renderHomeListHtml(lab: Settings['lab'], rows: HomeListRow[], dateText: string): string {
+  const body = rows.map((r, i) => `<tr><td class="n">${i + 1}</td><td><b>${esc(r.patient)}</b><br><span>${esc(r.age)}</span></td><td>${esc(r.phone) || '—'}</td><td>${esc(r.address)}</td><td>${esc(r.time) || '—'}</td><td>${esc(r.tests)}</td><td class="r">${r.due > 0 ? inr(r.due) : '—'}</td><td>${esc(r.sampleId)}<br><span>${esc(r.collector)}</span></td><td class="tick">☐</td></tr>`).join('')
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Home collection list</title><style>
+@page { size: A4 landscape; margin: 0 }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{padding:12mm;font:10pt/1.35 "Segoe UI","Noto Sans",Arial,sans-serif;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+h1{font-size:15pt;margin:0}
+.sub{color:#444;margin:2px 0 8px}
+table{width:100%;border-collapse:collapse}
+th{background:#eee;text-align:left;font-size:8.5pt;letter-spacing:.06em;text-transform:uppercase}
+th,td{border:1px solid #999;padding:4px 6px;vertical-align:top}
+td span{color:#444;font-size:8.5pt}
+td.n,td.tick{text-align:center;width:8mm}
+td.tick{font-size:16pt}
+td.r{text-align:right;white-space:nowrap}
+tr{break-inside:avoid;page-break-inside:avoid}
+</style></head><body>
+<h1>${esc(lab.name)} — Home collection list</h1>
+<div class="sub">${esc(dateText)} · ${rows.length} ${rows.length === 1 ? 'visit' : 'visits'}</div>
+<table><thead><tr><th>#</th><th>Patient</th><th>Phone</th><th>Address</th><th>Time</th><th>Tests</th><th>To collect</th><th>Sample / by</th><th>Done</th></tr></thead><tbody>${body || '<tr><td colspan="9">Nothing to collect.</td></tr>'}</tbody></table>
+</body></html>`
 }

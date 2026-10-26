@@ -11,6 +11,7 @@ import { GOOGLE } from '../shared/googleConfig'
 import { createBackup, listBackups, listRemovableDrives, pruneBackups, restoreBackup, validateBackup } from './backup'
 import { audit, type Db } from './db'
 import { renderLetterheadHtml } from '../shared/reportHtml'
+import { renderHomeListHtml } from '../shared/billHtml'
 import { htmlToPdf, listPrinters, printHtml, type PaperSize } from './electronBits'
 import { labelsHtml, payQrFor, receiptHtml } from './bill'
 import { findDuplicates, mergePatients } from './dedupe'
@@ -27,7 +28,7 @@ import {
 } from './results'
 import { checkPin, getSettings, hasPin, setPin, setSettings } from './settings'
 import {
-  addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, listVisits, markSentOut, removeTest, saveVitals, updateBill,
+  addPayment, attachSentOutPdf, cancelVisit, createVisit, getVisit, homePending, listVisits, markCollected, markSentOut, refundPayment, removeTest, saveVitals, updateBill,
   type NewVisitInput, type VisitFilter
 } from './visits'
 import { builtinLink, builtinResume, builtinStatus, builtinUnlink, initBuiltin, sendAutomatically } from './whatsapp'
@@ -84,6 +85,10 @@ export function runNightlyIfDue(ctx: Ctx, now = new Date()): string | null {
 
 export function makeHandlers(ctx: Ctx) {
   const { db } = ctx
+  const homeListHtml = () => {
+    const rows = homePending(db).map((j) => ({ sampleId: j.sampleId, patient: j.patient, age: j.age, phone: j.phone, address: j.address, time: j.time, collector: j.collector, tests: j.tests, due: j.due }))
+    return renderHomeListHtml(getSettings(db).lab, rows, new Date().toLocaleDateString('en-IN', { dateStyle: 'full' }))
+  }
   const pdfWriter = (p: string, b: Buffer) => writeFileSync(p, b)
   const pdfOf = (reportId: number) => ensurePdf(db, ctx.dataDir, reportId, htmlToPdf, pdfWriter)
   setPdfProvider(pdfOf)
@@ -191,6 +196,22 @@ export function makeHandlers(ctx: Ctx) {
       }
     },
 
+    /** Samples to be collected at patients' homes. */
+    home: {
+      pending: () => homePending(db),
+      markCollected: (visitId: number, collected?: boolean, collector?: string) => {
+        markCollected(db, visitId, collected ?? true, collector)
+        return true
+      },
+      listHtml: () => homeListHtml(),
+      printList: async () => {
+        const s = getSettings(db)
+        await printHtml(homeListHtml(), { silent: s.silentPrint, printerName: s.printerName, paper: s.paper })
+        audit(db, 'home.print_list', 'visits', null)
+        return true
+      }
+    },
+
     packages: {
       list: () => listPackages(db),
       listAll: () => listPackages(db, { includeInactive: true }),
@@ -285,6 +306,12 @@ export function makeHandlers(ctx: Ctx) {
       cancel: (visitId: number, reason: string, pin?: string) => {
         requirePin(db, pin)
         cancelVisit(db, visitId, reason)
+      },
+      /** Give money back (needs the owner PIN). `lowerBill` also takes the amount off the bill. */
+      refund: (visitId: number, o: { amount: number; method?: string; reason: string; lowerBill?: boolean }, pin?: string) => {
+        requirePin(db, pin)
+        refundPayment(db, visitId, o)
+        return true
       },
       removeTest: (visitTestId: number) => removeTest(db, visitTestId),
       saveVitals: (visitId: number, v: Vitals) => { saveVitals(db, visitId, v); return true },
