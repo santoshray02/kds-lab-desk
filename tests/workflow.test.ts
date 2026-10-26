@@ -328,6 +328,7 @@ describe('report design extras', () => {
     const rid = getEntry(db, visitId).reportId!
     saveDraft(db, rid, cbc)
     approveReport(db, rid, {})
+    setSettings(db, { abnormalStyle: 'standard' })
     const html = await reportHtml(db, rid)
     expect(html).toContain('outside the reference range')
     const d = buildReportData(db, rid)

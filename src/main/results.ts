@@ -313,6 +313,7 @@ export function buildReportData(db: Db, reportId: number): ReportData {
     version: rep.version, correctionNote, watermark,
     sections: [...sections.values()].sort((a, b) => secRank(a.title) - secRank(b.title)),
     sentOut, qrSvg: '', qrCaption: 'Scan to verify this report', approvedAtText: rep.approved_at ?? '',
-    vitalsText: s.reportVitals ? vitalsLine(vitalsOf(v), v.age_y) : ''
+    abnormalStyle: s.abnormalStyle,
+    vitalsText:s.reportVitals ? vitalsLine(vitalsOf(v), v.age_y) : ''
   }
 }

@@ -73,7 +73,7 @@ function General({ pin }: { pin?: string }) {
   async function save() {
     const r = await guard(api.settings.set({
       lab: s.lab, paper: s.paper, letterhead: s.letterhead, letterheadTopMm: s.letterheadTopMm, letterheadBottomMm: s.letterheadBottomMm,
-      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, waAutoSend: s.waAutoSend, reportTrends: s.reportTrends, reportVitals: s.reportVitals, evolution: s.evolution, silentPrint: s.silentPrint, printerName: s.printerName,
+      phoneRequired: s.phoneRequired, waMessageEn: s.waMessageEn, waMessageHi: s.waMessageHi, waTarget: s.waTarget, waAutoSend: s.waAutoSend, reportTrends: s.reportTrends, abnormalStyle: s.abnormalStyle, reportVitals: s.reportVitals, evolution: s.evolution, silentPrint: s.silentPrint, printerName: s.printerName,
       penDriveReminderDays: s.penDriveReminderDays
     }, pin))
     if (r) { await reloadSettings(); toast(t('Settings saved'), 'ok') }
@@ -101,6 +101,12 @@ function General({ pin }: { pin?: string }) {
           <label className="f">{t('Qualification')}<input className="input" value={s.lab.techQual} onChange={(e) => lab('techQual', e.target.value)} /></label>
         </div>
         <label className="checkrow"><input type="checkbox" checked={s.reportTrends} onChange={(e) => set('reportTrends', e.target.checked)} data-testid="report-trends" /> {t('Show a small graph of the patient’s earlier results on the report')}</label>
+        <label className="f">{t('How results outside the normal range look on the report')}
+          <select className="input" value={s.abnormalStyle} onChange={(e) => set('abnormalStyle', e.target.value as Settings['abnormalStyle'])} data-testid="abnormal-style">
+            <option value="gentle">{t('Gentle: bold with H or L, red only for dangerous values')}</option>
+            <option value="plain">{t('Plain: bold with H or L, no colour at all')}</option>
+            <option value="standard">{t('Standard: red values, pink rows and a summary box')}</option>
+          </select></label>
         <label className="checkrow"><input type="checkbox" checked={s.reportVitals} onChange={(e) => set('reportVitals', e.target.checked)} data-testid="report-vitals" /> {t('Print the vitals (height, weight, blood pressure…) on the report when they were taken')}</label>
         <label className="f">{t('Footer line')}<input className="input" value={s.lab.footer} onChange={(e) => lab('footer', e.target.value)} /></label>
       </div>

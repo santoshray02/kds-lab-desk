@@ -31,6 +31,8 @@ export interface Settings {
   waBuiltin: boolean
   /** small graphs of the patient's earlier results on the printed report */
   reportTrends: boolean
+  /** how out-of-range results look on the printed report: standard = red values, pink rows and a summary box; gentle = bold with H/L, red only for critical; plain = bold with H/L, no colour */
+  abnormalStyle: 'standard' | 'gentle' | 'plain'
   /** print the height, weight, blood pressure etc. on the report when they were taken */
   reportVitals: boolean
   /** Evolution API (self-hosted WhatsApp gateway): sends the PDF by itself */
@@ -86,6 +88,7 @@ export const DEFAULT_SETTINGS: Settings = {
   waAutoSend: false,
   waBuiltin: false,
   reportTrends: true,
+  abnormalStyle: 'gentle',
   reportVitals: false,
   evolution: { url: '', instance: '', apiKey: '' },
   analyzer: 'manual',

@@ -52,6 +52,8 @@ export interface ReportData {
   approvedAtText: string
   /** one line of vitals; empty when not taken or not switched on in Settings */
   vitalsText?: string
+  /** how out-of-range results look; see Settings.abnormalStyle (standard when missing) */
+  abnormalStyle?: 'standard' | 'gentle' | 'plain'
 }
 
 const esc = (s: string) =>
@@ -110,13 +112,13 @@ function sparkline(r: ReportRow): string {
   const last = xy[xy.length - 1]
   const bad = r.flag === 'H' || r.flag === 'L'
   const tip = [...r.trend.map((p) => `${p.d.split('-').reverse().join('/')}: ${p.v}`), `today: ${cur}`].join(' | ')
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><title>${esc(tip)}</title><polyline points="${xy.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#8a90a8" stroke-width="1.2" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" fill="${bad ? '#b3261e' : '#2b3a8f'}"/></svg>`
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}"><title>${esc(tip)}</title><polyline points="${xy.map((p) => p.map((n) => n.toFixed(1)).join(',')).join(' ')}" fill="none" stroke="#8a90a8" stroke-width="1.2" stroke-linejoin="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" class="dot${bad ? ' bad' : ''}" fill="#2b3a8f"/></svg>`
 }
 
 function rowHtml(r: ReportRow): string {
   const abnormal = r.flag != null
   const val = r.value === '' ? '' : esc(r.value) + (r.flag === 'H' || r.flag === 'L' ? ` ${r.flag}` : '')
-  return `<tr class="row${abnormal ? ' ab' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}${sparkline(r)}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}${gauge(r)}</td></tr>`
+  return `<tr class="row${abnormal ? ' ab' : ''}${abnormal && r.critical ? ' crit' : ''}"><td class="n">${esc(r.name)}</td><td class="v">${val}${sparkline(r)}</td><td class="u">${esc(r.unit)}</td><td class="r">${esc(r.range)}${gauge(r)}</td></tr>`
 }
 
 function widalHtml(p: ReportPanel): string {
@@ -168,7 +170,8 @@ export function renderReportHtml(d: ReportData): string {
   const hasTrend = d.sections.some((s) => s.panels.some((p) => p.rows.some((r) => r.trend?.length)))
   const flagged = d.sections.flatMap((x) => x.panels.flatMap((p) => p.rows)).filter((r) => r.value !== '' && (r.flag === 'H' || r.flag === 'L'))
   const crit = flagged.filter((r) => r.critical).length
-  const summary = flagged.length
+  const style = d.abnormalStyle ?? 'standard'
+  const summary = flagged.length && style === 'standard'
     ? `<div class="sum"><b>${flagged.length} result${flagged.length > 1 ? 's' : ''} outside the reference range${crit ? ` (${crit} critical)` : ''}:</b><span>${flagged.slice(0, 5).map((r) => `${esc(r.name.replace(/\s*\(.*\)$/, ''))} ${esc(r.value)} ${r.flag}`).join(' · ')}${flagged.length > 5 ? ` · +${flagged.length - 5} more` : ''}</span></div>`
     : ''
   const asked = d.testAsked ? `<div class="asked">Test Asked : ${esc(d.testAsked)}</div>` : ''
@@ -214,6 +217,7 @@ table.res td.v{font-weight:500}
 .gz .mk{position:absolute;top:-2px;width:3px;height:9px;margin-left:-1.5px;border-radius:2px;background:var(--ac)}
 .gz .mk.bad{background:var(--bad)}
 .spark{display:inline-block;vertical-align:middle;margin-left:7px}
+.spark .dot.bad{fill:var(--bad)}
 .trendnote{font-size:8pt;color:var(--mut);margin:4px 2px 0}
 .stamp{text-align:center;font-size:8pt;color:var(--mut);margin-top:3px}
 .widal-head{margin:4px 2px;font-size:10.5pt}
@@ -232,6 +236,11 @@ table.grid td.ant,table.grid th.ant{text-align:left}
 .foot .code{font:600 8.5pt "Consolas","Courier New",monospace;color:var(--ink);letter-spacing:.05em}
 .disc{text-align:center;font-size:8.5pt;color:var(--mut);margin-top:3px}
 .wm{position:fixed;top:45%;left:0;right:0;text-align:center;font:800 70pt/1 Arial,sans-serif;color:rgba(0,0,0,.07);transform:rotate(-25deg);pointer-events:none;z-index:-1}
+${style === 'standard' ? '' : `table.res tr.ab td{background:none}
+table.res tr.ab td.v{color:var(--ink)}
+.gz .mk.bad{background:var(--ac)}
+.spark .dot.bad{fill:var(--ac)}
+${style === 'gentle' ? 'table.res tr.ab.crit td.v{color:var(--bad)}' : ''}`}
 </style></head><body>${wm}
 <table class="page"><thead><tr><td>${header}
 <div class="pt">

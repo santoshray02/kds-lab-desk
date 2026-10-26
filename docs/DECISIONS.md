@@ -159,3 +159,10 @@ with the reason, so the doctor or a helper can change it later.
 * **Vitals lock with the report.** Editable while there is no report or a draft (including a correction draft); locked once approved, so a printed report cannot change after the fact.
 * **Printing vitals is off by default** (Settings), to keep the printed layout the owner already knows. When on, one "Vitals :" line appears under "Test Asked".
 * Vitals are not sent to the cloud (the cloud page only needs the report).
+
+
+## Calmer report colours (1.5.0)
+* Feedback from the lab: too much red frightens patients in village areas. New setting **Settings → Report header → "How results outside the normal range look"** with three choices: **Gentle** (default), **Plain**, **Standard** (the old look).
+* **Gentle:** abnormal values are bold with H or L; no pink rows, no red summary box; gauge marker and trend dot use the heading blue. Only values marked **critical** keep red text, so a dangerous result is never hidden.
+* **Plain:** same, with no red anywhere (also prints well on a black-and-white printer).
+* The flag letters, the bold type and the critical warning on the entry screen are unchanged; only the printed colours change. Old reports re-print in the style chosen at that moment, because the style is a print setting, not part of the report data.

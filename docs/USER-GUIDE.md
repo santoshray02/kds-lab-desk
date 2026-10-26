@@ -193,6 +193,14 @@ Vitals are for your records and the doctor. They print on the report only if you
 
 **हिंदी में:** नए मरीज़ की स्क्रीन पर **वाइटल्स** में ऊँचाई, वज़न, ब्लड प्रेशर आदि भरें। बड़ों के लिए BMI अपने आप निकलता है। रिपोर्ट अप्रूव होने के बाद ये लॉक हो जाते हैं।
 
+## Less red on the report
+**Settings → Report header → "How results outside the normal range look".**
+* **Gentle** (the default): high or low results are in **bold** with **H** or **L**. Only a dangerous (critical) value is shown in red.
+* **Plain**: bold with H or L and no colour at all.
+* **Standard**: red values, pink rows and a summary box at the top.
+
+हिंदी: सेटिंग्स में चुनें कि सामान्य सीमा से बाहर के नतीजे कैसे छपें। "हल्का" में सिर्फ़ मोटे अक्षर और H/L आते हैं, लाल रंग केवल खतरनाक मान के लिए।
+
 ## Cost
 
 KDS Lab Desk is **free and open source** (MIT licence). There is no limit on reports and no licence code. If you want help with set-up, training or support, contact rayskumar02@gmail.com (santoshray.in).
